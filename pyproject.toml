@@ -26,4 +26,5 @@ files = ["adapter"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+junit_family = "legacy"
 markers = ["real_data: optional read-only checks using local data"]

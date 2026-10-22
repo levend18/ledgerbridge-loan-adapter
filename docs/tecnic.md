@@ -310,7 +310,17 @@ Rust, sistemin CPU ve bellek bağımlı tek kısmında (parse/normalize/validate
 En kritik iki gereksinim (atomik replace + izolasyon) transactional garanti ister. Hacim TB'a çıkarsa `dwh` ELT ile kolon-bazlı motora replike edilir.
 
 ### ADR-03 · Multi-tenancy: paylaşılan tablo + `tenant_id` + RLS + statik tenant partition'ları
+
+**Revizyon (M1):** PostgreSQL bootstrap kimliği `app_migrator` yalnızca
+kurulum/migration için kullanılır; reader/writer/django rollerinin parolası env
+üzerinden kurulur. Parent dışında partition SELECT yetkisi verilmez.
+Kaynak sözleşmesiyle aynı kolon adı `loan_status_code` korunur.
 Detay §9.
+
+**Revizyon (M1, tutarlı okuma):** Kredi, plan, pointer ve profil için birden
+fazla sorgu yapan okuma aynı READ ONLY REPEATABLE READ transaction
+içinde yürütülür. Birbirinden bağımsız HTTP istekleri farklı yayınları
+görebilir; V-15 eşleştirilmiş okuması tek transaction içindedir.
 
 ### ADR-04 · Atomik replace: batch yükle → doğrula → **snapshot pointer'ını çevir** → eski batch'i temizle
 | Seçenek | Sorun |
@@ -583,7 +593,7 @@ CREATE TABLE dwh.fact_loan_retail (
   loan_account_number TEXT NOT NULL,
   customer_id TEXT NOT NULL,
   customer_type TEXT NOT NULL,
-  loan_status TEXT NOT NULL,
+  loan_status_code TEXT NOT NULL,
   days_past_due INTEGER NOT NULL,
   loan_start_date DATE NOT NULL,
   final_maturity_date DATE NOT NULL,

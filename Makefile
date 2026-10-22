@@ -1,4 +1,4 @@
-.PHONY: up down lint test verify seed bench build hooks
+.PHONY: up down lint test verify seed bench build hooks migrate
 up:
 	docker compose up -d --wait
 down:
@@ -7,8 +7,10 @@ build:
 	docker compose build dev
 lint:
 	docker compose run --rm dev sh -c 'ruff check . && ruff format --check . && mypy && lint-imports'
-test:
+test: migrate
 	docker compose run --rm dev pytest tests/unit tests/integration -q
+migrate:
+	docker compose run --rm dev sh -c 'python -m tools.bootstrap_db && python manage.py migrate --noinput'
 hooks:
 	git config core.hooksPath .githooks
 verify:

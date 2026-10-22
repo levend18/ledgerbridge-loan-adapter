@@ -105,3 +105,24 @@ Git deposunu okuyamaması nedeniyle kırıldı. Yalnızca container içindeki `/
 izlenmediğinden `make test` temiz klonda bulunamayan dizin hatası verdi.
 Integration ve verification dizinleri `.gitkeep` ile iskelete eklendi.
 Test kapsamı veya assert'ler değiştirilmedi.
+
+M0 tamamlandı: `f931f6b` için CI 39757749673 PASS. Gerçek pre-commit hook'u
+stage edilmiş sentetik `.guard-probe.csv` dosyasını reddetti; probe index'ten
+ve diskten temizlendi. Hiçbir gerçek CSV izlenmiyor. M1 başlatıldı.
+
+## M1 — PostgreSQL izolasyonu ve atomik yayın
+
+Django RunSQL migration'ı ile ref/ops/dwh şemaları, üç tenant, üç fact parent,
+dokuz statik partition, current_snapshot ve security_invoker ortak view kuruldu.
+Reader salt SELECT ve tenant+snapshot RLS ile sınırlı; partition'lara doğrudan
+SELECT yok. Writer BYPASSRLS fakat superuser değil. Django rolü yalnızca public
+şemasına yetkili. Servis parolaları env üzerinden parametreli bootstrap ile gelir.
+
+`make lint` PASS, `make test` 5 PASS. V-05 ve V-15'in SQL kısmı 2 PASS:
+10 adet 1000/2000 yayın değişiminde eşzamanlı okuma, transaction rollback,
+GC idempotency ve diğer tenant'ın korunması kanıtlandı. Ölçülen SQL okuma
+p99 4.391 ms (yerel arm64 Docker; API gecikmesi değildir).
+
+ADR-03/04 revizyonları: kaynak kolon adı loan_status_code korunur; çok sorgulu
+okumalar READ ONLY REPEATABLE READ transaction kullanır. API kapsamındaki
+V-15 henüz yapılmadı. M1 CI kontrolü bekleniyor; M2–M10 yapılmadı.

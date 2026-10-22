@@ -28,5 +28,6 @@ services:
       - .:/app
     environment:
       DATABASE_URL: postgresql://app_migrator:${POSTGRES_PASSWORD:-local-demo-password}@postgres/adapter
+      DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-local-demo-role-password}
 volumes:
   postgres-data:
