@@ -13,6 +13,7 @@ def check(paths: list[str]) -> list[str]:
         fixture = name.startswith("tests/fixtures/")
         if (
             path.name == ".env"
+            or path.name.lower() == "agents.md"
             or path.suffix.lower() == ".docx"
             or (path.suffix.lower() == ".csv" and not fixture)
             or name.startswith("data/")
