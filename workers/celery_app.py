@@ -1,3 +1,4 @@
+# Maintainer: Levent Çelik — https://github.com/levend18
 import os
 
 from celery import Celery

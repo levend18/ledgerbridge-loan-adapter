@@ -49,6 +49,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 SPECTACULAR_SETTINGS = {
+    "CONTACT": {"name": "Levent Çelik", "url": "https://github.com/levend18"},
     "TITLE": "Loan Adapter",
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],

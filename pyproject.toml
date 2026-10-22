@@ -1,6 +1,8 @@
 [project]
 name = "ledgerbridge-loan-adapter"
 version = "0.1.0"
+authors = [{name = "Levent Çelik"}]
+maintainers = [{name = "Levent Çelik"}]
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "django==5.2.7", "djangorestframework==3.16.1",
@@ -9,6 +11,11 @@ dependencies = [
   "httpx==0.28.1", "fastapi==0.119.0", "uvicorn==0.37.0",
   "python-multipart==0.0.20", "pyyaml==6.0.3", "django-cors-headers==4.9.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/levend18"
+Repository = "https://github.com/levend18/ledgerbridge-loan-adapter"
+Issues = "https://github.com/levend18/ledgerbridge-loan-adapter/issues"
 
 [dependency-groups]
 dev = ["maturin==1.9.6", "pytest==8.4.2", "ruff==0.14.0", "mypy==1.18.2",

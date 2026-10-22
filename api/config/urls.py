@@ -1,3 +1,4 @@
+# Maintainer: Levent Çelik — https://github.com/levend18
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenRefreshView

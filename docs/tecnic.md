@@ -415,6 +415,17 @@ shows severity/rule totals, raw/canonical details and rejection banners. Query
 keys include tenant; logout clears cached data. V-22 MUST is manual browser
 acceptance with synthetic screenshots; automated Playwright is SHOULD.
 
+**Post-delivery revision:** HTTP failures without a JSON body retain their HTTP
+status and display a readable fallback. Invalid success bodies are reported as
+invalid server responses. After a snapshot-bound cursor fails, the data screen
+can discard its cached pages and restart from the first page; switching datasets
+also resets the actual scroll viewport, preventing blank virtual rows.
+
+Project attribution is metadata-only: Levent Çelik (`https://github.com/levend18`)
+is listed in package manifests, HTML metadata, OCI image labels, OpenAPI contact
+metadata and source entry-point headers. It adds no visible UI signature and no
+GitHub authentication, network callbacks or account permissions.
+
 ## 20. Configuration
 
 See `.env.example` and compose for exact wired settings. Database URLs are split

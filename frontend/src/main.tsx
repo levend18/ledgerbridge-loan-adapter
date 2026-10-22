@@ -1,3 +1,4 @@
+// Maintainer: Levent Çelik — https://github.com/levend18
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

@@ -1,3 +1,4 @@
+# Maintainer: Levent Çelik — https://github.com/levend18
 import csv
 import json
 import os
@@ -18,7 +19,10 @@ Dataset = Literal["credit", "payment_plan"]
 
 
 def create_app(path=None, keys=None):
-    app = FastAPI(title="Bank simulator")
+    app = FastAPI(
+        title="Bank simulator",
+        contact={"name": "Levent Çelik", "url": "https://github.com/levend18"},
+    )
     store = BankStore(path or os.environ.get("BANK_DB", "/tmp/ledgerbridge-bank.sqlite"))
     keys = keys or {t: os.environ.get(f"BANK_KEY_{t}", f"demo-{t.lower()}-key") for t in TENANTS}
     app.add_middleware(
