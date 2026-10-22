@@ -177,3 +177,20 @@ ve sync adımı M6 bağlamasıyla tamamlanacak; henüz uçtan uca seed değildir
 V-20/V-21: ham değerler, version, digest, sayfalama ve tenant kontrolü geçti;
 gerçek HTTP üzerinden chunked indirme ayrıca doğrulandı. Sentetik seed altı birime
 başarıyla yüklendi. M4 CI bekleniyor; M5–M10 yapılmadı.
+
+M4 tamamlandı: `d4708f5` için CI 39762096258 PASS. M5 başlatıldı.
+
+## M5 — Gerçek adaptörler ve Celery
+
+HTTP indirme digest/satır sayısı ve sürüm kontrolü, Rust bağlaması, COPY yükleme,
+SQL duplicate/orphan/plan sayısı doğrulamaları, atomik profil+snapshot yayını,
+GC, kalıcı run/issue kayıtları ve Celery polling/retry eklendi. Reader RLS,
+writer ve Django yetkileri ayrıdır. Run süresi, GC süresi ve peak RSS kaydedilir.
+
+`make lint` PASS; Rust 3 ve Python 70 PASS. Mevcut verification 25 PASS;
+canlı worker/beat testi 1 PASS (otomatik yayın ve değişmeyen sürümde yeni run yok).
+1000→2000 replace, rejected batch'in eski snapshot/profili koruması, duplicate,
+orphan, schema, indirme bütünlüğü ve 40 update + 10 insert PATCH doğrulandı.
+Tekrarlı test bankanın iterator thread değişiminde SQLite hatasını yakaladı;
+istek başına bağlantı yaşam döngüsü ve 64KB stream ile düzeltildi, regresyon testi
+geçti. API/UI/200MB ve temiz klon kapsamı henüz yapılmadı. M5 CI bekleniyor.

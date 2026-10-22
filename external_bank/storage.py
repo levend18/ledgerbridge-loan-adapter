@@ -2,6 +2,7 @@ import csv
 import hashlib
 import json
 import sqlite3
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,8 +29,22 @@ class BankStore:
                     PRIMARY KEY(tenant,loan_type,dataset));
             """)
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(self.path, timeout=60)
+        # StreamingResponse advances one iterator sequentially across pool threads.
+        with closing(sqlite3.connect(self.path, timeout=60, check_same_thread=False)) as conn:
+            with conn:
+                yield conn
+
+    def stream(self, tenant, loan_type, dataset):
+        buffer = bytearray()
+        for _, payload in self.records(tenant, loan_type, dataset):
+            buffer.extend(payload.encode())
+            if len(buffer) >= 65536:
+                yield bytes(buffer)
+                buffer.clear()
+        if buffer:
+            yield bytes(buffer)
 
     def upload(self, tenant, loan_type, dataset, path, replace):
         unit = (tenant, loan_type, dataset)

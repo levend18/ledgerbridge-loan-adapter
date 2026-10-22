@@ -918,3 +918,11 @@ mod 3. Python süreç hash'i kullanılmaz. Bölme, kredi→tenant eşlemesini ge
 SQLite'ta tutar; plan dosyası belleğe alınmaz. Seed kaynakları salt okunurdur.
 Sentetik dosyalar altı basamaklı kredi ID sözleşmesine uyar; benchmark çoğaltması
 ID'ye sonek eklemek yerine yeni altı basamaklı ID ve artan taksit numarası üretir.
+
+### ADR-05/06 revizyonu (M5) — Çalıştırma kayıtları ve retry
+
+Her teknik retry ayrı run kaydıdır (`trigger=RETRY`); başarısız denemenin hata
+kanıtı korunur. Celery en fazla beş kez exponential backoff ile yeniden kuyruğa
+alır. Aynı birimde aktif run için kısmi unique index vardır; poll çakışması yeni
+kayıt oluşturmaz. Worker child başına tek görev çalışır: peak RSS geçmiş büyük
+çalıştırmaların high-water mark'ından etkilenmez. Temp dizini finally ile temizlenir.

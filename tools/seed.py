@@ -62,7 +62,7 @@ def split_sources(source, destination):
 def main():
     with tempfile.TemporaryDirectory(prefix="ledgerbridge-seed-") as work:
         root = Path(work)
-        source = Path(os.environ.get("SEED_SOURCE", "/app/data"))
+        source = Path(os.environ.get("DATA_DIR", "/app/data"))
         if not (source / "retail_credit_masked.csv").exists():
             source = root / "synthetic"
             generate(source)
@@ -84,7 +84,7 @@ def main():
                     row["outstanding_principal_balance"] = "100.00"
                     writer.writerow(row)
         with httpx.Client(
-            base_url=os.environ.get("BANK_URL", "http://bank:8001"), timeout=300
+            base_url=os.environ.get("BANK_BASE_URL", "http://bank:8001"), timeout=300
         ) as client:
             for tenant in TENANTS:
                 for kind in ("retail", "commercial"):

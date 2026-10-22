@@ -55,8 +55,12 @@ def create_app(path=None, keys=None):
         authorize(tenant, x_bank_key)
         fd, name = tempfile.mkstemp(suffix=".csv")
         try:
+            size = 0
             with os.fdopen(fd, "wb") as target:
                 async for chunk in request.stream():
+                    size += len(chunk)
+                    if size > int(os.environ.get("MAX_UPLOAD_MB", "250")) * 1024 * 1024:
+                        raise HTTPException(413, "Upload exceeds MAX_UPLOAD_MB")
                     target.write(chunk)
             return await run_in_threadpool(
                 store.upload, tenant, loan_type, dataset, name, request.method == "PUT"
@@ -84,7 +88,7 @@ def create_app(path=None, keys=None):
                 "next_cursor": rows[limit - 1][0] if len(rows) > limit else None,
             }
         return StreamingResponse(
-            (payload.encode() for _, payload in store.records(tenant, loan_type, dataset)),
+            store.stream(tenant, loan_type, dataset),
             media_type="application/x-ndjson",
         )
 

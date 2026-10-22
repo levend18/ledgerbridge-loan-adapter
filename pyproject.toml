@@ -27,4 +27,4 @@ files = ["adapter"]
 testpaths = ["tests"]
 pythonpath = ["."]
 junit_family = "legacy"
-markers = ["real_data: optional read-only checks using local data"]
+markers = ["live_worker: requires live Celery worker and beat", "real_data: optional read-only checks using local data"]

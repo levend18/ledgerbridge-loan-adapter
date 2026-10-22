@@ -21,7 +21,8 @@ services:
       retries: 30
   dev:
     profiles: [tools]
-    build:
+    image: ledgerbridge-loan-adapter:local
+    build: &app-build
       context: .
       dockerfile: docker/Dockerfile.dev
     volumes:
@@ -30,9 +31,8 @@ services:
       DATABASE_URL: postgresql://app_migrator:${POSTGRES_PASSWORD:-local-demo-password}@postgres/adapter
       DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-local-demo-role-password}
   bank:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.dev
+    image: ledgerbridge-loan-adapter:local
+    build: *app-build
     command: uvicorn external_bank.app:app --host 0.0.0.0 --port 8001
     environment:
       BANK_DB: /bank/data.sqlite
@@ -45,6 +45,38 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+  migrate:
+    image: ledgerbridge-loan-adapter:local
+    build: *app-build
+    command: sh -c 'python -m tools.bootstrap_db && python manage.py migrate --noinput'
+    environment:
+      DATABASE_URL: postgresql://app_migrator:${POSTGRES_PASSWORD:-local-demo-password}@postgres/adapter
+      DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-local-demo-role-password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  worker:
+    image: ledgerbridge-loan-adapter:local
+    build: *app-build
+    command: celery -A workers.celery_app worker --loglevel=INFO
+    environment: &worker-environment
+      DATABASE_URL_WRITER: postgresql://app_writer:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-30}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      bank:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  beat:
+    image: ledgerbridge-loan-adapter:local
+    build: *app-build
+    command: celery -A workers.celery_app beat --loglevel=INFO --schedule=/tmp/celerybeat
+    environment: *worker-environment
+    depends_on:
+      worker:
+        condition: service_started
 volumes:
   postgres-data:
   bank-data:

@@ -103,3 +103,22 @@ def test_synthetic_seed_keeps_loans_and_plans_in_same_tenant(tmp_path):
                 plans = list(csv.DictReader(stream, delimiter=";"))
             assert len(plans) == len(rows) * 3
             assert {p["loan_account_number"] for p in plans} == ids
+
+
+def test_stream_iterator_can_move_between_pool_threads(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from external_bank.storage import BankStore
+
+    store = BankStore(tmp_path / "bank.sqlite")
+    source = tmp_path / "records.csv"
+    source.write_bytes(csv_bytes([credit(i) for i in range(1, 501)]))
+    store.upload("BANK001", "RETAIL", "credit", source, True)
+    iterator = store.stream("BANK001", "RETAIL", "credit")
+    chunks = []
+    while True:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            chunk = pool.submit(next, iterator, None).result()
+        if chunk is None:
+            break
+        chunks.append(chunk)
+    assert len(b"".join(chunks).splitlines()) == 500
