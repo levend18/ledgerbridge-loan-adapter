@@ -1,0 +1,29 @@
+[project]
+name = "ledgerbridge-loan-adapter"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "django==5.2.7", "djangorestframework==3.16.1",
+  "djangorestframework-simplejwt==5.5.1", "drf-spectacular==0.28.0",
+  "celery==5.5.3", "redis==6.4.0", "psycopg[binary]==3.2.10",
+  "httpx==0.28.1", "fastapi==0.119.0", "uvicorn==0.37.0",
+  "python-multipart==0.0.20", "pyyaml==6.0.3", "django-cors-headers==4.9.0",
+]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "ruff==0.14.0", "mypy==1.18.2",
+ "import-linter==2.5.2", "pre-commit==4.3.0", "types-PyYAML==6.0.12.20250915"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = ["data"]
+
+[tool.mypy]
+strict = true
+files = ["adapter"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["real_data: optional read-only checks using local data"]

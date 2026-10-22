@@ -1,0 +1,9 @@
+.git
+.env
+data
+.venv
+**/target
+**/node_modules
+**/__pycache__
+artifacts
+bench-output

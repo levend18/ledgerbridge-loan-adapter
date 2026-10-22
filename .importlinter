@@ -1,0 +1,47 @@
+[importlinter]
+root_package = adapter
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Her modülde katman sırası
+type = layers
+containers =
+    adapter.ingestion
+    adapter.quality
+    adapter.warehouse
+    adapter.profiling
+layers =
+    infrastructure
+    application
+    domain
+
+[importlinter:contract:framework-free-core]
+name = adapter paketi Django/DRF/Celery bilmez
+type = forbidden
+source_modules = adapter
+forbidden_modules =
+    django
+    rest_framework
+    celery
+
+[importlinter:contract:pure-domain]
+name = Domain I/O kütüphanesi bilmez
+type = forbidden
+source_modules =
+    adapter.shared
+    adapter.ingestion.domain
+    adapter.quality.domain
+    adapter.warehouse.domain
+    adapter.profiling.domain
+forbidden_modules =
+    psycopg
+    httpx
+    adapter_engine
+
+[importlinter:contract:module-independence]
+name = Yardımcı modüller birbirini bilmez
+type = independence
+modules =
+    adapter.quality
+    adapter.warehouse
+    adapter.profiling
