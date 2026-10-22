@@ -181,7 +181,22 @@ class Runs(APIView):
         kind = request.query_params.get("loan_type")
         if kind:
             kind = LoanType(kind)
-        return Response(queries().runs(tenant, kind))
+        result = queries().runs(tenant, kind)
+        from adapter.ingestion.infrastructure.bank import HttpBankGateway
+        from adapter.shared import BankUnavailable
+
+        bank = HttpBankGateway(
+            os.environ.get("BANK_BASE_URL", "http://bank:8001"),
+            {tenant: os.environ.get(f"BANK_KEY_{tenant}", f"demo-{tenant.lower()}-key")},
+        )
+        versions = {}
+        for loan in [kind] if kind else list(LoanType):
+            try:
+                versions[loan] = bank.get_meta(Unit(tenant, LoanType(loan))).version
+            except BankUnavailable:
+                versions[loan] = None
+        result["source_versions"] = versions
+        return Response(result)
 
 
 class Data(APIView):

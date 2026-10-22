@@ -1,5 +1,5 @@
 # Interview data must never be committed (see AGENTS.md §2)
-data/
+/data/
 *.csv
 *.docx
 !tests/fixtures/**/*.csv

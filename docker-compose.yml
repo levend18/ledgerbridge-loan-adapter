@@ -100,6 +100,22 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+      bank:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:5173').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
   postgres-data:
   bank-data:

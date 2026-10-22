@@ -944,3 +944,11 @@ ondalıklı girdide profil ile COPY sonrası SQL arasında fark oluşmaz. Postgr
 INTEGER ve NUMERIC sınırını aşan değer field ERROR olur; COPY teknik hatasına
 bırakılmaz. Önceki motor testindeki 1,234 → 1.234 beklentisi sayı parser'ı için
 geçerlidir, money COPY çıktısı için 1.23 olmalıdır; test bu sözleşmeye düzeltildi.
+
+### M8 arayüz bağlaması
+
+`/api/runs` yanıtına `source_versions` eklenir: kimliğin tenant'ı için banka
+meta sürümleri. Böylece Sync kartı kaynak/yayın farkını gösterir; banka bağlantısı
+kurulamazsa sürüm null olur, run geçmişi erişilebilir kalır. Demo bank key yalnızca
+Bank Portal yükleme istemcisinde kullanılır. Vite proxy API ve bankayı aynı origin
+altında sunar; tenant her backend'de ayrıca doğrulanır.

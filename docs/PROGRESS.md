@@ -233,3 +233,19 @@ field ERROR olur. Test gevşetilmedi; gerçek saklama sözleşmesi test kapsamı
 
 Lint ve Rust testleri PASS; Python 81 PASS, mevcut verification 33 PASS.
 M7 CI bekleniyor. Frontend, benchmark, rapor ve temiz klon doğrulaması yapılmadı.
+
+M7 tamamlandı: `aead756` için CI 39766682120 PASS. M8 başlatıldı.
+
+## M8 — React arayüz ve manuel kabul
+
+Login, banka CSV replace/PATCH yükleme ve progress, kaynak/yayın sürümü,
+manuel sync ve canlı durum, sanal portföy tablosu, ECharts profilleri ve
+severity filtreli doğrulama ekranı tamamlandı. Query anahtarları tenant içerir;
+çıkışta cache temizlenir. Runs API kaynak sürümünü sunucu bank key'iyle okur.
+Frontend bağımlılıkları lock dosyasında sabit; npm audit sıfır açık bildirdi.
+
+Lint PASS; Rust 3, Python 81, Vitest 2 test PASS. Tarayıcıdan geçerli upload →
+SUCCEEDED → data/profiling → hatalı upload → REJECTED akışı ve eski 6 satırın
+korunması görüldü. V-22 manuel kanıtları docs/UI_VERIFICATION.md ve sentetik
+screenshots altındadır; otomatik Playwright SHOULD kapsamı yapılmadı.
+M8 CI bekleniyor. Kullanıcı M9 performans ölçümünü ve M10'u da istedi.
