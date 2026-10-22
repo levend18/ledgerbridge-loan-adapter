@@ -926,3 +926,11 @@ kanıtı korunur. Celery en fazla beş kez exponential backoff ile yeniden kuyru
 alır. Aynı birimde aktif run için kısmi unique index vardır; poll çakışması yeni
 kayıt oluşturmaz. Worker child başına tek görev çalışır: peak RSS geçmiş büyük
 çalıştırmaların high-water mark'ından etkilenmez. Temp dizini finally ile temizlenir.
+
+### ADR-03/04 revizyonu (M6) — HTTP okuyucu ve cursor
+
+HTTP servisi DWH için yalnızca reader DSN kullanır. Run oluşturma Django rolüne
+ayrıca verilen tenant policy'li ops INSERT yetkisiyle yapılır; writer şifresi API
+servisine verilmez. Cursor snapshot UUID'si ve son iş anahtarını taşır; snapshot
+sayfalar arasında değişirse 400 ile baştan okuma istenir. Plan cursor'ı kredi ve
+taksit numarası ikilisidir. Decimal değerler JSON'da string olarak döner.

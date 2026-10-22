@@ -102,6 +102,23 @@ def main():
                             )
                             response.raise_for_status()
         print("Loaded six units into the bank simulator")
+        from tools.seed_users import seed_users
+        from workers.runtime import connect, create_run, execute
+        from adapter.shared import LoanType, TenantId, Unit
+
+        seed_users()
+        with connect() as conn:
+            conn.execute(
+                "UPDATE ops.sync_run SET status='FAILED',error='Interrupted by reseed' WHERE status IN ('PENDING','FETCHING','PROCESSING','VALIDATING','PUBLISHING')"
+            )
+        for tenant in TenantId:
+            for kind in LoanType:
+                run = execute(create_run(Unit(tenant, kind), trigger="SEED", force=True).id)
+                if run.status != "SUCCEEDED":
+                    raise RuntimeError(
+                        f"Seed sync {tenant}/{kind}: {run.status}; {run.report.validation.counts}"
+                    )
+                print(f"{tenant}/{kind}: {run.status} {run.report.row_counts}")
 
 
 if __name__ == "__main__":

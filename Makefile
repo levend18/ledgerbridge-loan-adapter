@@ -19,8 +19,10 @@ hooks:
 verify:
 	docker compose stop beat worker
 	docker compose run --rm dev pytest tests/verification -q -m "not live_worker"
-seed:
+seed: migrate
+	docker compose stop beat worker
 	docker compose run --rm dev python -m tools.seed
+	docker compose up -d worker beat
 bench:
 	docker compose run --rm dev python tools/bench.py
 

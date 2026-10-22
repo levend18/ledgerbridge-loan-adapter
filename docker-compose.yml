@@ -30,6 +30,9 @@ services:
     environment:
       DATABASE_URL: postgresql://app_migrator:${POSTGRES_PASSWORD:-local-demo-password}@postgres/adapter
       DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-local-demo-role-password}
+      DATABASE_URL_WRITER: postgresql://app_writer:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
+      DATABASE_URL_READER: postgresql://app_reader:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
+      DATABASE_URL_DJANGO: postgresql://app_django:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
   bank:
     image: ledgerbridge-loan-adapter:local
     build: *app-build
@@ -77,6 +80,26 @@ services:
     depends_on:
       worker:
         condition: service_started
+  api:
+    image: ledgerbridge-loan-adapter:local
+    build: *app-build
+    command: python manage.py runserver 0.0.0.0:8000 --noreload
+    environment:
+      DATABASE_URL_DJANGO: postgresql://app_django:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
+      DATABASE_URL_READER: postgresql://app_reader:${DB_ROLE_PASSWORD:-local-demo-role-password}@postgres/adapter
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-local-demo-only-not-for-deployment}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
   postgres-data:
   bank-data:

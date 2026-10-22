@@ -194,3 +194,23 @@ orphan, schema, indirme bütünlüğü ve 40 update + 10 insert PATCH doğruland
 Tekrarlı test bankanın iterator thread değişiminde SQLite hatasını yakaladı;
 istek başına bağlantı yaşam döngüsü ve 64KB stream ile düzeltildi, regresyon testi
 geçti. API/UI/200MB ve temiz klon kapsamı henüz yapılmadı. M5 CI bekleniyor.
+
+M5 ve yerel talimat dosyalarının Git'ten çıkarılması: temizlenmiş geçmişte
+`30b35d1` için CI 39764118393 PASS. Önceki commit SHA'ları geçmiş temizliğiyle
+ değişti. M6 başlatıldı.
+
+## M6 — JWT ve REST API
+
+JWT tenant/sub/role claim'leri hesap üyeliğinden üretilir. Veri, run, issue ve
+sync uçları kimlik doğrular; parametre tenant'ı sadece eşleşme kontrolüdür.
+DWH reader transaction'ları READ ONLY REPEATABLE READ; cursor snapshot'a bağlıdır.
+API writer parolası almaz; Django rolüne tenant policy'li run INSERT ve yalnızca
+kuyruk hatasını FAILED yapacak dar UPDATE yetkisi verildi. RFC 9457 hata içerikleri,
+OpenAPI/Swagger ve seed demo kullanıcıları eklendi.
+
+Lint PASS; Python 78 PASS, mevcut verification 31 PASS. V-01 tüm route taraması,
+V-02 JWT, V-03/04/06 tenant/type/pagination, sync 202/409 ve 10 yayın sırasında
+API okuma tutarlılığı geçti. Gerçek HTTP: token/health/schema 200, anonim veri 401.
+`make seed` gerçek kaynakları değiştirmeden işledi: 25.430 retail, 4.440 commercial
+kredi ve 269.442/25.070 plan; altı SEED run SUCCEEDED. Son ortamın temiz klon ve
+izole uçtan uca doğrulaması M10'da ayrıca yapılacak. M6 CI bekleniyor.
