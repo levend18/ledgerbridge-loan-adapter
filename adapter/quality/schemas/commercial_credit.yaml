@@ -1,0 +1,166 @@
+{
+  "dataset": "commercial_credit",
+  "columns": {
+    "customer_id": {
+      "type": "string",
+      "required": true
+    },
+    "customer_type": {
+      "type": "code",
+      "required": true,
+      "domain": "customer_type"
+    },
+    "loan_account_number": {
+      "type": "string",
+      "required": true,
+      "pattern": "^LOAN_[0-9]{6}$"
+    },
+    "loan_status_code": {
+      "type": "code",
+      "required": true,
+      "domain": "loan_status"
+    },
+    "days_past_due": {
+      "type": "int",
+      "required": true,
+      "min": "0"
+    },
+    "final_maturity_date": {
+      "type": "date",
+      "required": true
+    },
+    "total_installment_count": {
+      "type": "int",
+      "required": false,
+      "min": "0"
+    },
+    "outstanding_installment_count": {
+      "type": "int",
+      "required": false,
+      "min": "0"
+    },
+    "paid_installment_count": {
+      "type": "int",
+      "required": false,
+      "min": "0"
+    },
+    "first_payment_date": {
+      "type": "date",
+      "required": false
+    },
+    "original_loan_amount": {
+      "type": "money",
+      "required": true,
+      "min": "0"
+    },
+    "outstanding_principal_balance": {
+      "type": "money",
+      "required": true,
+      "min": "0"
+    },
+    "nominal_interest_rate": {
+      "type": "rate",
+      "required": false,
+      "min": "0",
+      "max": "2",
+      "unit": "percent"
+    },
+    "total_interest_amount": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "kkdf_rate": {
+      "type": "rate",
+      "required": false,
+      "min": "0",
+      "max": "1",
+      "unit": "percent"
+    },
+    "kkdf_amount": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "bsmv_rate": {
+      "type": "rate",
+      "required": false,
+      "min": "0",
+      "max": "1",
+      "unit": "percent"
+    },
+    "bsmv_amount": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "grace_period_months": {
+      "type": "int",
+      "required": false,
+      "min": "0"
+    },
+    "installment_frequency": {
+      "type": "int",
+      "required": false,
+      "min": "0"
+    },
+    "loan_start_date": {
+      "type": "date",
+      "required": true
+    },
+    "loan_closing_date": {
+      "type": "date",
+      "required": false
+    },
+    "internal_rating": {
+      "type": "string",
+      "required": false
+    },
+    "external_rating": {
+      "type": "string",
+      "required": false
+    },
+    "loan_product_type": {
+      "type": "string",
+      "required": false
+    },
+    "loan_status_flag": {
+      "type": "code",
+      "required": false,
+      "domain": "loan_status"
+    },
+    "customer_region_code": {
+      "type": "string",
+      "required": false
+    },
+    "sector_code": {
+      "type": "string",
+      "required": false
+    },
+    "internal_credit_rating": {
+      "type": "string",
+      "required": false
+    },
+    "default_probability": {
+      "type": "rate",
+      "required": false,
+      "min": "0",
+      "max": "1",
+      "unit": "fraction"
+    },
+    "risk_class": {
+      "type": "string",
+      "required": false
+    },
+    "customer_segment": {
+      "type": "string",
+      "required": false
+    }
+  },
+  "rules": {
+    "MATURITY_AFTER_START": "ERROR",
+    "INSTALLMENT_COUNT_SUM": "WARNING",
+    "OUTSTANDING_LE_ORIGINAL": "WARNING",
+    "ZERO_INSTALLMENT_COUNT": "WARNING"
+  }
+}

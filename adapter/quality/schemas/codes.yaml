@@ -1,0 +1,63 @@
+{
+  "loan_status": {
+    "ACTIVE": [
+      "A",
+      "Aktif",
+      "Active"
+    ],
+    "CLOSED": [
+      "K",
+      "Kapalı",
+      "kapali",
+      "Closed"
+    ]
+  },
+  "installment_status": {
+    "OPEN": [
+      "A",
+      "Açık",
+      "Open",
+      "Active",
+      "Unpaid"
+    ],
+    "CLOSED": [
+      "K",
+      "Kapalı",
+      "kapali",
+      "Paid",
+      "Closed",
+      "Ödendi"
+    ]
+  },
+  "yes_no": {
+    "true": [
+      "E",
+      "Evet",
+      "Y",
+      "Yes",
+      "1",
+      "true"
+    ],
+    "false": [
+      "H",
+      "Hayır",
+      "N",
+      "No",
+      "0",
+      "false"
+    ]
+  },
+  "customer_type": {
+    "INDIVIDUAL": [
+      "I",
+      "Bireysel",
+      "Individual"
+    ],
+    "T": [
+      "T"
+    ],
+    "V": [
+      "V"
+    ]
+  }
+}

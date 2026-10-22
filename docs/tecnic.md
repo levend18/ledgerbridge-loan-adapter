@@ -290,6 +290,10 @@ Python'da Rust yalnızca `RustDatasetProcessor` (infrastructure) üzerinden gör
 ## 6. Mimari kararlar (ADR)
 
 ### ADR-01 · Rust: PyO3 + maturin extension modülü
+
+**Revizyon (M3):** V-11'deki default_probability örneği commercial olarak
+düzeltildi; retail kaynak başlığında bu kolon yoktur. Kolonlar YAML
+sözleşmesinde eksiksiz tanımlanır; kaynak kolon adı korunur.
 | Seçenek | Artı | Eksi |
 |---|---|---|
 | ✅ PyO3 extension | Ağ/serileştirme yok, tek deploy, GIL bırakılır, Python'dan doğrudan test | maturin build adımı |

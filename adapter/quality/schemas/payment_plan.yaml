@@ -1,0 +1,79 @@
+{
+  "dataset": "payment_plan",
+  "columns": {
+    "loan_account_number": {
+      "type": "string",
+      "required": true,
+      "pattern": "^LOAN_[0-9]{6}$"
+    },
+    "installment_number": {
+      "type": "int",
+      "required": true,
+      "min": "0"
+    },
+    "actual_payment_date": {
+      "type": "date",
+      "required": false
+    },
+    "scheduled_payment_date": {
+      "type": "date",
+      "required": true
+    },
+    "installment_amount": {
+      "type": "money",
+      "required": true,
+      "min": "0"
+    },
+    "principal_component": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "interest_component": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "kkdf_component": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "bsmv_component": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "installment_status": {
+      "type": "code",
+      "required": true,
+      "domain": "installment_status"
+    },
+    "remaining_principal": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "remaining_interest": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "remaining_kkdf": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    },
+    "remaining_bsmv": {
+      "type": "money",
+      "required": false,
+      "min": "0"
+    }
+  },
+  "rules": {
+    "CLOSED_WITHOUT_PAYMENT": "WARNING",
+    "FUTURE_PAYMENT": "ERROR",
+    "CLOSED_REMAINING": "CORRECTED",
+    "INSTALLMENT_COMPONENT_SUM": "WARNING"
+  }
+}

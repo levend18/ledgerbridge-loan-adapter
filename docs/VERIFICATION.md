@@ -97,7 +97,7 @@ Demo kullanıcıları seed ile oluşur: `bank001_user`, `bank002_user`, `bank003
   - Oran: `18.5%`, `1850 bps`, percent kolonunda `18.5`, fraction kolonunda `0.185`
   - Kategori: `K`, `Kapalı`, `KAPALI `, `kapali`, `Paid`, `Closed`; `E`, `Evet`, `yes`
   - Sayı: `1.234,56`, `1,234.56`, `1234.56`
-- **Beklenen:** DWH'de `2024-01-15`, `0.185`, `CLOSED`, `true`, `1234.56`. Kirli değerler için issue'da `raw_value → normalized_value`. Run detayında `unit_decisions`: gerçek veride retail `nominal_interest_rate = percent`, `default_probability = fraction`.
+- **Beklenen:** DWH'de `2024-01-15`, `0.185`, `CLOSED`, `true`, `1234.56`. Kirli değerler için issue'da `raw_value → normalized_value`. Run detayında `unit_decisions`: gerçek veride retail `nominal_interest_rate = percent`, commercial `default_probability = fraction`.
 - **Ek (gerçek veriyle):** retail'deki 127 adet `100.00` faiz `RATE_IMPLAUSIBLE` WARNING üretir; veri yayınlanır.
 
 ---

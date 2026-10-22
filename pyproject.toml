@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest==8.4.2", "ruff==0.14.0", "mypy==1.18.2",
+dev = ["maturin==1.9.6", "pytest==8.4.2", "ruff==0.14.0", "mypy==1.18.2",
  "import-linter==2.5.2", "pre-commit==4.3.0", "types-PyYAML==6.0.12.20250915"]
 
 [tool.ruff]

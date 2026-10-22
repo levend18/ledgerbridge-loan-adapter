@@ -143,3 +143,20 @@ unit testleri DB kullanmaz. ADR-10 ortak saf DTO'ları açıklar; ADR-04 termina
 başarıyı GC sonrasına taşır (V-07 fiziksel satır garantisi). GC sonrası teknik
 hata yayındaki batch'i silmez. Retry ağ sınıfları tipli; Celery bağlaması M5'tedir.
 M2 CI bekleniyor; M3–M10 yapılmadı.
+
+M2 tamamlandı: `a18fc35` için CI 39759264049 PASS. M3 başlatıldı.
+
+## M3 — Rust normalizasyon, doğrulama ve profil motoru
+
+Sabit Rust 1.90.0/PyO3 bağımlılıkları, YAML kolon sözleşmeleri, COPY yazıcısı,
+Decimal normalizasyonu, satır kuralları ve Welford profilleri eklendi. İlk 10.000
+satır birim/biçim tespiti için sınırlı buffer'da; devamı streaming. Kategoriler
+1000 farklı değerde sınırlandırılır, yüksek kardinalite açıkça işaretlenir.
+Issue detayları 1000 ile sınırlı; sayaçlar tüm satırları kapsar.
+Boş CSV dahil header kontrolü, kolon kanıtıyla belirsiz sayı çözümü ve ham→kanonik
+kanıtlar test edildi. V-11 default_probability örneği gerçek sözleşmeyle uyumlu
+olarak commercial'a düzeltildi; gerçek veriler test girdisi yapılmadı.
+
+`make lint` PASS (clippy dahil), Rust 3 test PASS (iki proptest), Python 57 PASS.
+Motor V-11 parametreleri + V-05/V-15 SQL: 17 PASS. Banka/API/uçtan uca V-ID'ler
+henüz tamamlanmadı. M3 CI bekleniyor; M4–M10 yapılmadı.
