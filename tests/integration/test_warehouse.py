@@ -213,3 +213,24 @@ def test_atomic_publish_under_concurrent_reads(record_property):
             assert credit[1] == 1
         p99 = sorted(latencies)[min(len(latencies) - 1, int(len(latencies) * 0.99))]
         record_property("sql_read_p99_ms", round(p99 * 1000, 3))
+
+
+def test_partition_statistics_are_available_only_through_bounded_writer_entrypoint():
+    with connect() as writer:
+        batch = str(uuid4())
+        load(writer, "BANK001", batch, 123)
+        writer.execute("SELECT ops.analyze_partition(%s,%s)", ("fact_loan_retail", "BANK001"))
+        assert (
+            writer.execute(
+                "SELECT reltuples FROM pg_class WHERE oid='dwh.fact_loan_retail_bank001'::regclass"
+            ).fetchone()[0]
+            == 123
+        )
+        with pytest.raises(psycopg.errors.RaiseException, match="Invalid warehouse partition"):
+            writer.execute(
+                "SELECT ops.analyze_partition(%s,%s)",
+                ("fact_loan_retail; DROP SCHEMA dwh CASCADE", "BANK001"),
+            )
+    for role in ("app_reader", "app_django"):
+        with connect(role) as reader, pytest.raises(psycopg.errors.InsufficientPrivilege):
+            reader.execute("SELECT ops.analyze_partition(%s,%s)", ("fact_loan_retail", "BANK001"))

@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+import select
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
@@ -82,8 +83,32 @@ class PostgresWarehouse:
                     ),
                 )
                 with self.conn.cursor().copy(statement) as copy, Path(filename).open() as source:
+                    buffer = bytearray()
+                    prefix_bytes = ("\t".join(prefix) + "\t").encode()
                     for line in source:
-                        copy.write("\t".join(prefix) + "\t" + line)
+                        buffer.extend(prefix_bytes)
+                        buffer.extend(line.encode())
+                        if len(buffer) >= 1024 * 1024:
+                            copy.write(bytes(buffer))
+                            buffer.clear()
+                            self._flush_copy()
+                    if buffer:
+                        copy.write(bytes(buffer))
+                        self._flush_copy()
+                # A new batch has no useful statistics until COPY finishes. Without
+                # ANALYZE, anti-joins can become quadratic on large snapshots.
+                self.conn.execute("SELECT ops.analyze_partition(%s,%s)", (table, unit.tenant))
+
+    def _flush_copy(self) -> None:
+        # libpq otherwise grows its outbound buffer when PostgreSQL is slower
+        # than the producer. Wait for socket backpressure after each bounded block.
+        while True:
+            pending = self.conn.pgconn.flush()
+            if pending == 0:
+                return
+            if pending < 0:
+                raise psycopg.OperationalError("COPY socket flush failed")
+            select.select([], [self.conn.fileno()], [], 30)
 
     def validate(self, unit: Unit, batch: str) -> ValidationReport:
         report = ValidationReport()
