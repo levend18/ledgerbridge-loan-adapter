@@ -160,3 +160,20 @@ olarak commercial'a düzeltildi; gerçek veriler test girdisi yapılmadı.
 `make lint` PASS (clippy dahil), Rust 3 test PASS (iki proptest), Python 57 PASS.
 Motor V-11 parametreleri + V-05/V-15 SQL: 17 PASS. Banka/API/uçtan uca V-ID'ler
 henüz tamamlanmadı. M3 CI bekleniyor; M4–M10 yapılmadı.
+
+M3 tamamlandı: `a3f18a8` için CI 39761271388 PASS. M4 başlatıldı.
+
+## M4 — Banka simülasyonu ve seed
+
+FastAPI/SQLite WAL servisi: transaction'lı PUT replace/PATCH upsert, birim sürümü,
+SHA-256/satır sayısı meta, NDJSON chunked stream ve cursor sayfalaması. Tenant
+bank key'den çözülür; ham stringler korunur. Bozuk CSV transaction'ı geri alır.
+PUT duplicate'leri korur (adaptörün V-10 kontrolü için). ADR-07 açıklandı.
+Sentetik üretici, SQLite eşlemeli deterministik seed, güncelleme için v2 parçaları
+ve field/schema/normalize/cross kirletme profilleri eklendi. Seed'in demo kullanıcı
+ve sync adımı M6 bağlamasıyla tamamlanacak; henüz uçtan uca seed değildir.
+
+`make lint` PASS; Rust 3 ve Python 61 PASS; mevcut verification 18 PASS.
+V-20/V-21: ham değerler, version, digest, sayfalama ve tenant kontrolü geçti;
+gerçek HTTP üzerinden chunked indirme ayrıca doğrulandı. Sentetik seed altı birime
+başarıyla yüklendi. M4 CI bekleniyor; M5–M10 yapılmadı.

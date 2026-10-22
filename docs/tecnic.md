@@ -904,3 +904,17 @@ ledgerbridge-loan-adapter/
 | M12 | COULD | İç analist + audit log, arşiv, p50/p95 | – |
 
 En riskli varsayım (RLS + snapshot pointer) M1'de, kod yazılmadan önce SQL seviyesinde doğrulanır.
+
+### ADR-07 revizyonu (M4) — Ham kayıt ve deterministik seed
+
+Banka SQLite kayıtlarında ayrı sıra ID'si kullanır; PUT mükerrer iş anahtarlarını
+korur, böylece V-10 duplicate kontrolünü adaptör gerçekleştirir. PATCH ilgili
+anahtarın eski satırlarını kaldırıp yeni ham satırı ekler. Meta özeti ve NDJSON
+aynı sıra ID'si sırasıyla, UTF-8 ve kompakt JSON ile hesaplanır. Okuma boyunca
+SQLite snapshot transaction açık kalır; kısmi yazma görülmez.
+
+§9.4 hash tanımı: SHA-256(customer_id UTF-8) ilk 8 baytının big-endian tamsayısı
+mod 3. Python süreç hash'i kullanılmaz. Bölme, kredi→tenant eşlemesini geçici
+SQLite'ta tutar; plan dosyası belleğe alınmaz. Seed kaynakları salt okunurdur.
+Sentetik dosyalar altı basamaklı kredi ID sözleşmesine uyar; benchmark çoğaltması
+ID'ye sonek eklemek yerine yeni altı basamaklı ID ve artan taksit numarası üretir.

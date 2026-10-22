@@ -18,6 +18,6 @@ hooks:
 verify:
 	docker compose run --rm dev pytest tests/verification -q
 seed:
-	docker compose run --rm dev python tools/seed.py
+	docker compose run --rm dev python -m tools.seed
 bench:
 	docker compose run --rm dev python tools/bench.py

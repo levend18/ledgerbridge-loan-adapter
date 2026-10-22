@@ -29,5 +29,22 @@ services:
     environment:
       DATABASE_URL: postgresql://app_migrator:${POSTGRES_PASSWORD:-local-demo-password}@postgres/adapter
       DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-local-demo-role-password}
+  bank:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    command: uvicorn external_bank.app:app --host 0.0.0.0 --port 8001
+    environment:
+      BANK_DB: /bank/data.sqlite
+    volumes:
+      - bank-data:/bank
+    ports:
+      - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 volumes:
   postgres-data:
+  bank-data:
