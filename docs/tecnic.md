@@ -322,6 +322,12 @@ fazla sorgu yapan okuma aynı READ ONLY REPEATABLE READ transaction
 içinde yürütülür. Birbirinden bağımsız HTTP istekleri farklı yayınları
 görebilir; V-15 eşleştirilmiş okuması tek transaction içindedir.
 
+**Revizyon (M2, GC tamamlanması):** V-07'nin terminal run sonrası fiziksel
+satır sayısı garantisi için publish transaction'ı pointer, profil ve run'ın
+batch bilgisini PUBLISHING durumunda birlikte kaydeder. GC tamamlandıktan
+sonra SUCCEEDED yazılır. GC teknik hata verirse run FAILED olabilir fakat
+yayınlanmış batch geri silinmez; sonraki sync GC'yi tekrar çalıştırır.
+
 ### ADR-04 · Atomik replace: batch yükle → doğrula → **snapshot pointer'ını çevir** → eski batch'i temizle
 | Seçenek | Sorun |
 |---|---|
@@ -348,6 +354,10 @@ TanStack Query (polling), TanStack Table (sanal scroll), ECharts.
 Gerçek verideki yaygın tutarsızlıklar (§3.2) ikili geçerli/geçersiz ayrımını yetersiz kılıyor. Detay §11.3.
 
 ### ADR-10 · Modüler monolit + katmanlı mimari, import-linter ile zorlanır
+
+**Revizyon (M2):** Modül bağımsızlığı için Issue, ValidationReport ve ProcessReport
+gibi modüller arasında taşınan saf veri nesneleri shared altında tutulur;
+severity kararı quality domain'inde, sync durum makinesi ingestion domain'indedir. Hiçbir shared tip I/O yapmaz.
 
 **Revizyon (M0):** Tek kök paket için import-linter 2.5.2 ayarı `root_package`
 olarak düzeltildi; `root_packages` tek satırlık metni karakter listesi olarak
@@ -643,12 +653,13 @@ CREATE TABLE dwh.current_snapshot (           -- yayındaki veri = bu tablonun g
      INSERT INTO dwh.current_snapshot (tenant_id, loan_type, batch_id, source_version, published_at, row_counts)
        VALUES (…) ON CONFLICT (tenant_id, loan_type) DO UPDATE SET batch_id = EXCLUDED.batch_id, …;
      INSERT INTO ops.data_profile …;
-     UPDATE ops.sync_run SET status = 'SUCCEEDED', … ;
+     UPDATE ops.sync_run SET status = 'PUBLISHING', … ;
    COMMIT;
 
 (transaction dışı)
 5. GC: DELETE FROM dwh.fact_* WHERE tenant_id = $t AND <loan_type koşulu> AND batch_id <> $current;
    (idempotent; çökme olursa sonraki run tekrar dener)
+6. GC tamamlanınca run SUCCEEDED olur.
 ```
 
 **Garantiler:**

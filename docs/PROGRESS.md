@@ -126,3 +126,20 @@ p99 4.391 ms (yerel arm64 Docker; API gecikmesi değildir).
 ADR-03/04 revizyonları: kaynak kolon adı loan_status_code korunur; çok sorgulu
 okumalar READ ONLY REPEATABLE READ transaction kullanır. API kapsamındaki
 V-15 henüz yapılmadı. M1 CI kontrolü bekleniyor; M2–M10 yapılmadı.
+
+M1 tamamlandı: `3c52209` için CI 39758465166 PASS. M2 başlatıldı.
+
+## M2 — Domain, port'lar ve use case'ler
+
+Tenant/loan/dataset/severity değerleri, finite Decimal Money/Rate, sınırlı detaylı
+validation raporu, SyncRun geçişleri ve severity politikası eklendi. Her modülün
+port'u kendi domain'inde; orkestrasyon dış bağımlılıklara yalnızca Protocol ile
+bağlanır. Poll değişmeyen sürüme run açmaz; tek bir bankanın ağ hatası diğer
+birimlerin kontrolünü kesmez. Aynı sürümde manuel sync SKIPPED olur; force işler.
+
+`make lint` PASS; `make test` 20 PASS. Fake'lerle hata/uyarı/schema, lock, force,
+rollback, GC, state machine ve Decimal kontrolleri geçti. Domain/application
+unit testleri DB kullanmaz. ADR-10 ortak saf DTO'ları açıklar; ADR-04 terminal
+başarıyı GC sonrasına taşır (V-07 fiziksel satır garantisi). GC sonrası teknik
+hata yayındaki batch'i silmez. Retry ağ sınıfları tipli; Celery bağlaması M5'tedir.
+M2 CI bekleniyor; M3–M10 yapılmadı.
