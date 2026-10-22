@@ -185,3 +185,8 @@ Architecture diagrams, design/ADR, acceptance contract, code tour, retrospective
 and README were revised together. Historical benchmark results in this log and
 the retrospective retain their historical meaning; README reference metrics will
 be refreshed from this revision's full verification run before delivery.
+
+Full verification of `01ed1ff` passed: 90 Python, 3 Rust and 12 frontend tests,
+and `make verify` 21/21 MUST PASS. Fresh benchmarks with exact profile completion:
+50 MB in 17.659 s and 200 MB in 67.553 s; child peak RSS 108.45 MiB and
+107.80 MiB (0.59% difference). README reference metrics now use these values.

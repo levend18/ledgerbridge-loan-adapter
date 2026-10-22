@@ -224,18 +224,20 @@ Protocols allow fake adapters in unit tests; composition stays at the boundary.
 The initial import-linter configuration was corrected to `root_package` and
 external-package scanning; constraints were not weakened.
 
-**Requirement-audit revision (22 October 2026):** the supplied task requires exact
-categorical distinct counts and modes without a cardinality exception. Keep the
-Rust map bounded at 1,000 entries, then complete overflowed columns through SQL
-before publication. This preserves bounded worker memory and the short atomic
-pointer/profile transaction; aggregation failure leaves the old snapshot intact.
-
 ### ADR-11 — Decimal business values, floating-point statistics
 
 Python Decimal, rust_decimal and NUMERIC represent amounts and rates. Welford
 mean/stddev use f64 and are labeled as statistics. Do not use float for financial
 normalization or storage. SQL equivalence tests use relative tolerance 1e-9 for
 statistics and exact comparisons for other results.
+
+### ADR-12 — Exact profiles with bounded worker memory
+
+**Requirement-audit revision (22 October 2026):** the supplied task requires exact
+categorical distinct counts and modes without a cardinality exception. Keep the
+Rust map bounded at 1,000 entries, then complete overflowed columns through SQL
+before publication. This preserves bounded worker memory and the short atomic
+pointer/profile transaction; aggregation failure leaves the old snapshot intact.
 
 ## 7. Dataset contract
 

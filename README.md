@@ -148,15 +148,16 @@ Screenshots use synthetic records only. See the [manual acceptance record](docs/
 
 Measured on 22 October 2026: Apple M4, 16 GiB host RAM, Docker Linux/arm64
 (7.748 GiB VM), Python 3.12.12 and PostgreSQL 16.10. Both runs used fresh Celery
-child processes and 10,000 compatible credits. Sizes are decimal MB.
+child processes and 10,000 compatible credits. Measured at commit `01ed1ff`, with
+exact high-cardinality profile completion enabled. Sizes are decimal MB.
 
 | Plan CSV | Plan rows | Sync | Child peak RSS | Docker worker peak | GC |
 |---|---:|---:|---:|---:|---:|
-| 50,000,011 bytes | 686,161 | 10.976 s | 103.64 MiB | 120.50 MiB | 25 ms |
-| 200,000,014 bytes | 2,717,294 | 73.558 s | 103.71 MiB | 149.10 MiB | 2374 ms |
+| 50,000,011 bytes | 686,161 | 17.659 s | 108.45 MiB | 141.10 MiB | 25 ms |
+| 200,000,014 bytes | 2,717,294 | 67.553 s | 107.80 MiB | 163.60 MiB | 2406 ms |
 
 Both runs **PASS**: child RSS ≤256 MiB and size-to-size RSS difference
-**0.064%**, below 20%. The full sync duration includes download, validation, COPY,
+**0.59%**, below 20%. The full sync duration includes download, validation, COPY,
 publication and GC; source generation/upload is outside that timer. Docker samples
 include the worker parent as well as the child. Timings vary by machine and load.
 `make verify` reruns the benchmark and writes fresh evidence; these are the local
