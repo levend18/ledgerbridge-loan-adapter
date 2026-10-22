@@ -100,3 +100,8 @@ Public repo oluşturuldu: https://github.com/levend18/ledgerbridge-loan-adapter.
 İlk CI, container ile runner dosya sahipliği farkından dolayı pre-commit'in
 Git deposunu okuyamaması nedeniyle kırıldı. Yalnızca container içindeki `/app`
 çalışma dizini Git safe.directory olarak tanımlandı; host ayarları değiştirilmedi.
+
+İkinci CI'da pre-commit ve lint geçti; boş integration klasörü Git'te
+izlenmediğinden `make test` temiz klonda bulunamayan dizin hatası verdi.
+Integration ve verification dizinleri `.gitkeep` ile iskelete eklendi.
+Test kapsamı veya assert'ler değiştirilmedi.
