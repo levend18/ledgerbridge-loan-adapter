@@ -125,9 +125,7 @@ export function ProfileView({
               ) : stats.top ? (
                 <>
                   <p className="subtle">
-                    {stats.high_cardinality
-                      ? "Yüksek çeşitlilik · özet sınırını aşıyor"
-                      : `${stats.distinct_count} farklı değer · En sık: ${stats.most_frequent ?? "—"}`}
+                    {`${stats.distinct_count} farklı değer · En sık: ${stats.most_frequent ?? "—"}`}
                   </p>
                   {stats.top.length > 0 && <Distribution stats={stats} />}
                 </>

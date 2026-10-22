@@ -27,7 +27,11 @@
 8. **`adapter/quality` exports `SeverityPolicy`**. Rejection deletes only the
    new batch; the published pointer remains unchanged. `PostgresRuns.save`
    persists state, counters and detailed evidence.
-9. **`PostgresWarehouse.publish`** and
+9. **`adapter/profiling/infrastructure/postgres.py::PostgresProfiles.prepare`**
+   completes exact categorical summaries for columns whose Rust map exceeded
+   1,000 values. SQL groups the unpublished tenant/batch and returns only ten
+   rows per column; this occurs before the publication transaction.
+   **`PostgresWarehouse.publish`** and
    **`adapter/profiling/infrastructure/postgres.py::PostgresProfiles.save`**
    share one publish transaction. `collect_garbage` removes obsolete unit rows;
    only then does the run become SUCCEEDED.

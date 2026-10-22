@@ -82,6 +82,11 @@ class Fakes:
         self.published = batch
         self.events.append("publish")
 
+    def prepare(self, unit, batch, report):
+        if self.failure == "profile_prepare":
+            raise RuntimeError("Profile aggregation failed")
+        self.events.append("profile_prepare")
+
     def save(self, *args):
         if len(args) == 1:
             self.events.append(deepcopy(args[0].status))
@@ -111,6 +116,8 @@ def test_publish_follows_validation_and_gc_precedes_success():
     uc.execute(run, "/unused")
     assert run.status == Status.SUCCEEDED
     assert f.published == run.id
+    assert f.events.index(Status.VALIDATING) < f.events.index("profile_prepare")
+    assert f.events.index("profile_prepare") < f.events.index(Status.PUBLISHING)
     assert f.events.index(Status.VALIDATING) < f.events.index("publish")
     assert f.events.index("gc") < f.events.index(Status.SUCCEEDED)
 
@@ -166,7 +173,7 @@ def test_busy_unit_skips_without_downloading():
     assert "download" not in f.events
 
 
-@pytest.mark.parametrize("failure", ["meta", "download", "profile", "gc"])
+@pytest.mark.parametrize("failure", ["meta", "download", "profile_prepare", "profile", "gc"])
 def test_technical_failures_preserve_publication_boundaries(failure):
     f = Fakes()
     f.failure = failure

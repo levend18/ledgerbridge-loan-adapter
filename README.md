@@ -173,8 +173,9 @@ are documented in [architect.md](architect.md).
   authoritative totals and capitalization rules need clarification.
 - External rating scales remain raw. ERROR tolerance defaults to zero; no partial
   portfolio acceptance is assumed.
-- Beyond 1,000 categories, exact top/distinct summaries are unavailable and the
-  profile explicitly reports high cardinality.
+- Rust bounds its category map at 1,000 values. PostgreSQL completes exact
+  distinct/mode/top-ten statistics before publication for larger cardinalities;
+  the worker receives only ten summary rows per column.
 - Bank credit/plan uploads are separate transactions; a poll between uploads may
   reject the intermediate source state while preserving the previous DWH snapshot.
 - Historical snapshots are not archived. DELETE GC bloat is left to autovacuum.

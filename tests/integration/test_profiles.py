@@ -96,3 +96,35 @@ def test_v18_every_profile_matches_sql(client, kind):
     assert rejected.status == "REJECTED"
     after = client.get("/api/profiling", {"loan_type": kind})
     assert after.data == response.data
+
+
+@pytest.mark.parametrize("kind", list(LoanType))
+def test_v18_high_cardinality_profiles_are_exact(client, kind):
+    target = Unit(TenantId.BANK001, kind)
+    rows = [credit(i, kind.lower(), 1) for i in range(1, 1008)]
+    for i in range(1001, 1007):
+        rows[i]["customer_id"] = "CUST_000999" if i % 2 else "CUST_001000"
+    upload(rows, [payment(i, 1) for i in range(1, 1008)], target)
+    run = run_sync(target)
+    assert run.status == "SUCCEEDED"
+    login(client)
+    response = client.get("/api/profiling", {"loan_type": kind})
+    assert response.status_code == 200
+    profile = response.data["datasets"]["credit"]["customer_id"]
+    assert profile["count"] == 1007
+    assert profile["null_ratio"] == 0
+    assert profile["high_cardinality"] is True
+    assert profile["distinct_count"] == 1001
+    assert profile["most_frequent"] == "CUST_000999"
+    assert profile["top"][:2] == [
+        {"value": "CUST_000999", "count": 4},
+        {"value": "CUST_001000", "count": 4},
+    ]
+    assert len(profile["top"]) == 10
+    plans = response.data["datasets"]["payment_plan"]["loan_account_number"]
+    assert plans["distinct_count"] == 1007
+    assert plans["most_frequent"] == "LOAN_000001"
+    assert len(plans["top"]) == 10
+    login(client, 2)
+    other = client.get("/api/profiling", {"tenant_id": "BANK001", "loan_type": kind})
+    assert other.status_code == 403

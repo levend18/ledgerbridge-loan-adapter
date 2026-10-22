@@ -53,6 +53,7 @@ sequenceDiagram
   alt Errors or schema mismatch
     Q->>P: Discard new batch, REJECTED
   else Publishable
+    Q->>P: Complete exact high-cardinality profiles
     Q->>P: One transaction: pointer and profiles
     Q->>P: Old-batch GC, SUCCEEDED
   end
@@ -143,10 +144,23 @@ partitions. `ref.code_mapping` stores normalization aliases.
 - Decimal normalization/storage and explicitly floating-point statistics have separate roles.
 - Import contracts enforce architecture rather than leaving it as diagram-only intent.
 
+## Profile completeness and portal recovery
+
+Validated, unpublished rows are the source for SQL profile completion. The unit
+lock prevents concurrent publication; aggregation finishes before the short
+pointer/profile transaction. Failure discards the new batch and retains the
+previous data and profiles. The high_cardinality flag describes the Rust memory
+threshold, not missing API statistics.
+
+Data-page cursors contain the snapshot identity. A stale cursor returns a readable
+400 problem; the portal can clear only the selected tenant/type/dataset pages and
+restart. Dataset switches reset the scroll viewport. Metadata attributes package,
+image and API ownership to Levent Çelik without a visible UI signature.
+
 ## Limits
 
 Bank credit/plan uploads are separate operations. Intermediate polls may reject
-an incomplete source update while DWH readers retain the old snapshot. Profiles
-cap exact categories at 1,000 and mark high cardinality explicitly. Archived
+an incomplete source update while DWH readers retain the old snapshot. Rust caps its category map at 1,000; PostgreSQL completes exact distinct counts,
+modes and top-ten values before publication, returning only bounded summaries. Archived
 snapshots, API-key authentication, reaper and rate limiting are not complete.
 See the technical design for all ADRs and the report for measured acceptance.

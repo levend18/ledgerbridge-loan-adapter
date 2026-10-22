@@ -129,7 +129,10 @@ docker stats. Report duration and GC cost in README and verification-report.md.
 Compare every column's null ratio and numeric min/max/avg/stddev_samp or exact
 categorical distinct/mode to PostgreSQL results for both credit types and plans.
 Numeric relative error <1e-9; other values exact. A fully empty closing-date column
-has null_ratio 1.0. Rejected batches must not alter the published profile.
+has null_ratio 1.0. Rejected batches must not alter the published profile. Include more than 1,000
+distinct categories in both loan types, tied modes with deterministic ordering,
+and payment-plan categories; counts/modes/top ten must remain exact in the API.
+Profile preparation failures must preserve the previous publication.
 
 ### V-19 · Fault-injection manifest matches results — SHOULD
 A reproducible mixed dirty-data generator should create expected.json, with

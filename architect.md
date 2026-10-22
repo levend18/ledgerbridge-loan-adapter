@@ -55,9 +55,37 @@ a large outbound buffer even though application rows are produced one at a time.
 
 The correction uses bounded COPY blocks and waits for socket backpressure before
 producing more. This is an implementation fix, not a higher memory limit, reduced
-input size or weaker acceptance test. Fresh 50/200 MB measurements validated
+input size or weaker acceptance test. The initial successful 50/200 MB measurements validated
 the correction: 103.64/103.71 MiB child RSS, a 0.064% difference, both below
 256 MiB. The 200 MB sync processed 2,717,294 plan rows in 73.558 seconds.
+
+## Exact categorical profiles without unbounded worker memory
+
+A review against the original assignment exposed a gap in the bounded profiler:
+above 1,000 distinct values, Rust returned null for distinct count and mode. The
+assignment requires those statistics for categorical fields; labeling the limit
+honestly did not satisfy that requirement.
+
+Rust still uses bounded memory. After validation, `PostgresProfiles.prepare`
+groups each overflowed column in PostgreSQL over the unpublished tenant/batch.
+The database can spill aggregation to disk, and only the top ten values plus the
+exact number of groups return to Python. Equal frequencies use byte ordering for
+a deterministic mode. Preparation completes before pointer publication so a
+failed aggregate cannot replace the old data or lengthen the publish transaction.
+Tests cover both loan types, more than 1,000 categories, tied modes, plan fields,
+tenant authorization and preparation failures. The dashboard displays these exact
+results even when high_cardinality is true. Fresh performance evidence is linked
+from the README; older measurements above describe the original debugging event.
+
+## Recovering the portal after a new snapshot
+
+A user can request page two after a newer portfolio has been published. Combining
+those pages would mix snapshots. The API rejects the stale cursor; the portal now
+offers a first-page restart scoped to the exact tenant/type/dataset cache. Dataset
+switches also reset the actual scroll container to avoid empty virtual rows.
+Nested DRF validation errors and non-JSON HTTP responses now become readable
+messages. Regression tests and a manual 150-row synthetic browser run verified
+recovery and successful continuation after restarting.
 
 ## PostgreSQL plans need statistics for each new batch
 

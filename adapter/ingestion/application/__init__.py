@@ -75,6 +75,7 @@ class SyncDatasetUseCase:
                         self.warehouse.discard(run.unit, run.batch_id)
                     self._advance(run, Status.REJECTED)
                     return
+                self.profiles.prepare(run.unit, run.batch_id, run.report)
                 self._advance(run, Status.PUBLISHING)
                 with self.uow.transaction():
                     self.warehouse.publish(run.unit, run.batch_id, meta.version, run.report)

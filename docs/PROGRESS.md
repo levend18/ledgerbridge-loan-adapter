@@ -163,3 +163,25 @@ Manual browser regression used 150 synthetic BANK002/RETAIL rows: a publication
 between page requests produced the readable stale-snapshot error; restarting
 loaded the first 100 rows, then the remaining 50 with no error. The final next-page
 button was disabled correctly. Screenshots are retained under ignored artifacts.
+
+
+## Original-assignment audit — 22 October 2026
+
+Reviewed the supplied Word task against every numbered requirement, its four
+example scenarios and delivery instructions. The document remains outside Git.
+The existing R1–R13 traceability covers the whole requested scope; JWT is a valid
+choice, and optional API keys/reaper/rate limits are not assignment omissions.
+
+Found and fixed a real R10 gap: high-cardinality categorical fields previously
+returned null distinct counts and modes. Rust still bounds its map; SQL now
+completes exact summaries from the validated, unpublished tenant/batch before
+pointer publication. Only ten rows per column enter Python. The frontend displays
+those results. Added acceptance cases for both loan types, tied modes, plan
+categories and tenant authorization, plus preparation-failure and UI regressions.
+A test-helper invocation initially passed a username where a tenant number was
+required; corrected that setup without changing any expected result.
+
+Architecture diagrams, design/ADR, acceptance contract, code tour, retrospective
+and README were revised together. Historical benchmark results in this log and
+the retrospective retain their historical meaning; README reference metrics will
+be refreshed from this revision's full verification run before delivery.

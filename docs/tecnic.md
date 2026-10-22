@@ -47,6 +47,20 @@ technologies are Django, Python, Rust and PostgreSQL.
 | R12 | Periodic source-version checks | §10 | V-12–V-14 |
 | R13 | README and architecture documentation | §23 | V-23 |
 
+The original assignment was reviewed on 22 October 2026. Its eleven numbered
+requirements map to R1–R11; periodic synchronization and documentation map to
+R12–R13. JWT satisfies the requested JWT-or-API-key choice. A crashed-worker
+reaper, rate limiting and an automated Playwright suite are our optional scope,
+not missing requirements from that assignment. The source document and contact
+information remain outside the repository.
+
+The audit identified one functional gap: exact categorical statistics were
+unavailable above 1,000 values. The profiling revision in §16 closes that gap;
+V-18 now covers overflowed categories for both loan types and payment plans.
+Authentication excludes only bootstrap token issuance and explicitly public
+health/schema/documentation routes; all portfolio and operation routes require
+identity. The bank simulator has its own tenant-bound key.
+
 ## 3. Supplied data and design implications
 
 The supplied source analysis describes 25,430 retail credits (27 columns),
@@ -210,6 +224,12 @@ Protocols allow fake adapters in unit tests; composition stays at the boundary.
 The initial import-linter configuration was corrected to `root_package` and
 external-package scanning; constraints were not weakened.
 
+**Requirement-audit revision (22 October 2026):** the supplied task requires exact
+categorical distinct counts and modes without a cardinality exception. Keep the
+Rust map bounded at 1,000 entries, then complete overflowed columns through SQL
+before publication. This preserves bounded worker memory and the short atomic
+pointer/profile transaction; aggregation failure leaves the old snapshot intact.
+
 ### ADR-11 — Decimal business values, floating-point statistics
 
 Python Decimal, rust_decimal and NUMERIC represent amounts and rates. Welford
@@ -372,7 +392,10 @@ Compute summaries over normalized, storage-precision values during streaming.
 Publish profiles with the snapshot. Every column has count/null_count/null_ratio.
 Numeric columns have min/max/mean/sample stddev; dates have min/max; categorical
 columns have exact distinct/mode/top ten while below the cardinality limit.
-Above it, high_cardinality=true and unavailable exact statistics are null.
+Above it, high_cardinality=true marks the bounded Rust accumulator; PostgreSQL
+completes exact distinct/mode/top-ten summaries over the validated unpublished
+batch before the publication transaction. Only ten grouped rows per column cross
+the driver boundary. Ties use UTF-8 byte ordering (COLLATE "C"), matching Rust.
 GET profiling reads only published profiles. Compare all columns and both credit
 types against PostgreSQL aggregate functions. Rejected syncs preserve profiles.
 
@@ -443,7 +466,9 @@ Rust tests/proptest cover pure normalization. Python domain tests use fake ports
 Integration tests use real PostgreSQL and bank HTTP. Verification maps tests to
 V-IDs. Live polling and README curl examples run with worker/beat enabled;
 isolated tests stop them to avoid races. Lint includes ruff, format, strict mypy,
-import-linter, cargo fmt/clippy and frontend ESLint/Prettier. Vitest tests login.
+import-linter, cargo fmt/clippy and frontend ESLint/Prettier. Vitest covers login,
+HTTP errors, pagination recovery, dataset scroll reset and exact categorical
+profile display.
 Private source tests must be marked real_data and remain optional when data is
 absent. No assertion weakening or artificial skip/xfail is allowed.
 
@@ -474,7 +499,7 @@ portfolios; reseed after verification to restore a useful interactive environmen
 Keep only current snapshots; use full replacement rather than deltas; perform DB
 transactions in Python rather than Rust; avoid a generic rule expression engine,
 Kubernetes and additional analytical databases. These choices reduce operational
-complexity. GC bloat, separate source uploads, capped categorical summaries and
+complexity. GC bloat, separate source uploads and
 missing crashed-worker reaping remain explicit limitations.
 
 ## 25. Open business questions
