@@ -1,7 +1,7 @@
 FROM ghcr.io/astral-sh/uv:0.9.5 AS uv
 FROM rust:1.90.0-slim-bookworm AS rust
 FROM python:3.12.12-slim-bookworm
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates build-essential && rm -r /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git curl jq ca-certificates build-essential && rm -r /var/lib/apt/lists/*
 RUN git config --global --add safe.directory /app
 COPY --from=uv /uv /uvx /usr/local/bin/
 COPY --from=rust /usr/local/cargo /usr/local/cargo

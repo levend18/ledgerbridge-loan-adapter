@@ -1,251 +1,101 @@
-# İlerleme günlüğü
+# Progress and Evidence
 
-## 2026-10-22 — Kurulum ve başlangıç incelemesi
+## Scope and working agreement
 
-Kullanıcının talimatı: M0–M10 boyunca milestone sonunda onay beklemeden devam
-et; her milestone'u doğrula, commit et ve push et. GitHub girişi kullanıcıya ait.
+Complete M0–M10 without pausing for milestone approval, test each change, commit
+and push, and verify a clean Docker-only checkout. Actual source data and secrets
+remain outside Git. Local agent instructions are also excluded from all published
+history. The latest user request changes the project identity to LedgerBridge and
+requires English Markdown documentation, including an engineering retrospective.
 
-Okunan kaynaklar: `AGENTS.md`, `docs/tecnic.md`, `docs/VERIFICATION.md` ve
-repo dışındaki özel hazırlık prompt'u. Gerçek CSV'ler yalnızca `head -n 6` ile
-incelendi; değiştirilmedi ve herhangi bir dış servise gönderilmedi.
+## Completed foundations: M0–M7
 
-### Mimari anlayışı
+- **M0:** Docker Desktop/CLI and GitHub authentication established. Containerized
+  Python/Rust tooling, private-file guard, import contracts and CI added. Initial
+  CI issues were Git safe.directory in a bind mount and empty untracked test
+  directories; both were corrected without bypassing checks.
+- **M1:** ref/ops/dwh, three roles plus migrator, static partitions, reader RLS,
+  snapshot pointers and SQL concurrency tests. Reader has no direct partition
+  access. Initial SQL read p99 was 4.391 ms on the local arm64 environment.
+- **M2:** Pure domain values, Protocol ports, state machine, severity policy and
+  use cases with fake adapters. Publish/GC failure behavior is explicit.
+- **M3:** Streaming Rust normalization, schema checks, bounded issue details,
+  Welford summaries, category cap, COPY output and property tests. No float for
+  monetary normalization/storage. Full input schemas retained.
+- **M4:** FastAPI/SQLite bank, raw-value preservation, PUT/PATCH, stable digests,
+  stream/pagination, deterministic seed and synthetic/dirty generators.
+- **M5:** HTTP integrity checks, COPY, SQL cross-file checks, atomic publication,
+  persistent runs/profiles, live worker/beat and network retry. A SQLite iterator
+  crossing ASGI thread-pool threads was fixed with explicit connection lifetime
+  and thread policy. Network chunks remain bounded.
+- **M6:** JWT membership claims, tenant-scoped endpoints, RFC 9457 errors,
+  snapshot-bound cursors and narrow enqueue permissions. Actual source seed once
+  completed all six units: 25,430 retail and 4,440 commercial credits, with
+  269,442 and 25,070 plans. Files were not modified or committed.
+- **M7:** Published profile API and all-column SQL comparisons. Money/rate
+  precision is aligned before COPY and profiling; overflow becomes field ERROR.
+  At this milestone Rust 3, Python 81 and existing verification 33 tests passed.
+  CI run 39766682120 passed.
 
-1. Senkronizasyon birimi tenant ve kredi tipidir; kredi ve plan birlikte yayınlanır.
-2. Banka simülasyonu ayrı FastAPI servisi ve SQLite depolamasıdır.
-3. Ham değerler bankada korunur; normalizasyon Rust motorunda yapılır.
-4. Python çekirdeği framework bağımsız domain, application ve infrastructure katmanlarından oluşur.
-5. Django kimlik doğrular; tenant kimlikten türetilir.
-6. DWH PostgreSQL'dir; okuyucu rolü RLS ile tenant ve güncel batch'e sınırlandırılır.
-7. COPY ile görünmez batch yüklenir; doğrulama sonrası snapshot pointer atomik çevrilir.
-8. ERROR yayını reddeder; WARNING ve CORRECTED raporlanır.
-9. Celery işleme, beat metadata polling yapar; büyük dosyalar akış halinde işlenir.
-10. Kabul ölçütleri container testleri, gerçek bellek ölçümü ve temiz klon denemesidir.
+Historical commit IDs changed during requested history cleanup. CI run IDs above
+identify the original validation runs; they are not claims that later work passed.
 
-### Uygulama öncesi dikkat noktaları
+## M8 — Frontend
 
-- §9.4 deterministik hash ister: Python'ın süreçten sürece değişen `hash()`
-  fonksiyonu yerine sabit algoritma seçilmeli ve dokümana açıklanmalıdır.
-- §15 benchmark ID soneki, §7 örnek altı basamaklı ID pattern'i ile çelişir;
-  M3 öncesinde veri sözleşmesi netleştirilmelidir.
-- V-15 kredi ve planın birlikte okunmasını gerektirir. Ayrı READ COMMITTED
-  sorguları yayın anında farklı snapshot görebilir; tutarlı okuma transaction'ı gerekir.
-- V-18 kesin kategorik sayım ile §15 kategori limiti yüksek kardinalitede
-  farklı davranış gerektirir; limit aşımı açık biçimde raporlanmalıdır.
-- V-02 JWT kısmı MUST kapsamındadır; API key kısmı M11'e aittir.
+Implemented feature-based React portal: login, CSV replace/PATCH and progress,
+source/published versions, manual sync with status polling, virtual data rows,
+ECharts profiles and filtered validation evidence. Tenant is included in query
+keys; logout clears cache. Dependency versions are locked; the npm audit at
+implementation time reported zero vulnerabilities.
 
-### M0 planı ve mevcut durum
+Rust 3, Python 81, Vitest 2 and lint passed. Manual browser flow exercised valid
+upload → SUCCEEDED → data/profiles → invalid upload → REJECTED, with the old six
+rows preserved. CI run 39772208224 passed. The manual workflow was repeated with LedgerBridge branding: version 63
+published six credits/plans; version 64 was rejected and version 63 preserved.
+All six screenshots were refreshed. Old branded screenshots are excluded from
+the rewritten history.
 
-1. Docker Desktop ve GitHub CLI kur; daemon ve GitHub kimliğini doğrula.
-2. Git main, veri/secret koruması ve katman iskeletini oluştur.
-3. Container kalite ortamını, sabit bağımlılıkları, Makefile ve compose'u kur.
-4. Pre-commit ve CI'ı kur; lint ve testleri çalıştır.
-5. Public repoyu oluştur, küçük commit'leri push et ve CI'ı doğrula.
+## M9 — Measurements and corrections verified
 
-Başlangıçta Docker ve gh yoktu; Git deposu henüz oluşturulmamıştı.
-Codex mevcut masaüstü oturumunda çalışıyor; Git ve make mevcut.
-Kurulum başlatıldı. M0 tamamlanmadı; M1–M10 yapılmadı.
-Henüz geçen V-ID, CI sonucu veya verification raporu yok.
+The benchmark generates 10,000 compatible credits and approximately 50/200 MB of
+plan CSVs, uses real fresh Celery child processes and compares physical row counts.
+It records worker RSS, duration, GC cost and Docker memory samples.
 
-### Kurulum engelleri
+1. Initial 50 MB sync took 217.547 seconds. A bad anti-join plan exposed missing
+   batch statistics. Direct ANALYZE as app_writer silently lacked table-owner
+   privileges on PostgreSQL 16. A narrowly scoped SECURITY DEFINER function now
+   handles nine static partitions; reader/Django access and invalid inputs are
+   rejected. The follow-up 50 MB sync took roughly 13 seconds.
+2. Continuous host-written Docker stats output was not immediately visible through
+   the Desktop bind mount. Timestamped snapshots are now finalized after the host
+   collector closes its file; missing stats are a failure, not fabricated data.
+3. The first complete two-size measurement succeeded functionally but **failed
+   memory acceptance**: 50 MB 12.277 s / 170,836 KiB, 200 MB 73.246 s / 367,452 KiB.
+   Linux libpq could grow its outbound COPY buffer when the producer outran the
+   database. COPY now uses bounded blocks and explicit socket backpressure.
+   The fresh run passed: 50 MB 10.976 s / 106,132 KiB; 200 MB 73.558 s /
+   106,200 KiB, 2,717,294 plans. RSS difference 0.064%; Docker peaks
+   120.5/149.1 MiB. GC 25/2,374 ms.
 
-- `gh` 2.103.0 kuruldu. `gh auth status` oturum olmadığını doğruladı.
-  Kullanıcının talimatı uyarınca `gh auth login` kullanıcıya iletildi.
-  Sonraki kontrolde giriş başarıyla doğrulandı: aktif hesap `levend18`,
-  Git protokolü HTTPS; repo ve workflow yetkileri mevcut. GitHub giriş
-  engeli çözüldü.
-- `brew install --cask docker`, önceden kayıtlı 4.75.0 cask'ını 4.96.2'ye
-  yükseltmeye çalıştı. `/Applications/Docker.app` başlangıçta mevcut değildi.
-  Eski ayrıcalıklı yardımcı dosyalarını temizleme aşaması yönetici parolası
-  istedi; etkileşimsiz `sudo` hata kodu 1 ile sonlandı. Docker kurulumu
-  tamamlanmadı; daemon başlatılamadı ve container testleri çalıştırılamadı.
-- Kullanıcı kendi terminalinde Docker kurulumunu ve GitHub girişini
-  tamamladığında M0 planından devam edilecek. Parola veya token istenmedi.
-  GitHub girişi sonrasındaki kontrolde Docker komutu ve
-  `/Applications/Docker.app` hâlâ bulunamadı; Docker engeli devam ediyor.
+After the COPY correction, lint and the regression suite passed Rust 3,
+Python 83 and Vitest 2 tests.
 
-### Docker kurulumu — disk alanı engeli
+## M10 — Documentation and report in progress
 
-Kullanıcının bildirdiği `hdiutil: Resource busy` hatasından sonra aktif
-kurulum süreçleri ve bağlı imajlar kontrol edildi. Docker DMG'si doğrudan
-başarıyla bağlandı; Homebrew'un eski cask yardımcılarını kaldırırken
-sudo istemesinden bağımsız olarak uygulama kopyalama yolu denendi.
-`ditto /Volumes/Docker/Docker.app /Applications/Docker.app` işlemi
-`No space left on device` ile başarısız oldu. Bu sırada boş alan 575 MiB,
-eksik uygulama 1.5 GiB, kaynak uygulama 2.2 GiB idi.
-Yalnızca bu denemede oluşturulan eksik uygulama kaldırıldı ve Docker
-imajı ayrıldı; kullanıcının diğer dosyaları silinmedi. Container image,
-build cache ve PostgreSQL verileri için de disk alanı gerektiğinden
-Docker ve M0 doğrulaması disk alanı açılana kadar engelli.
+README, architecture diagrams, code tour, manual UI evidence and an engineering
+retrospective are being completed in English. The verification runner separates
+isolated tests, live polling/README examples and performance phases, and generates
+an honest JUnit-derived report even after failures. Missing/failed/skipped MUST
+evidence cannot pass. A unit test covers false-positive report prevention.
 
-## M0 — Container iskeleti ve yerel doğrulama
+Outstanding: validate the COPY fix, refresh UI evidence with the new identity,
+finish all MUST verification, push cleaned history, obtain green CI and run the
+quick-start sequence in a clean clone. No final delivery claim has been made.
 
-Disk temizliği kullanıcı talimatıyla tamamlandı. Docker Desktop 4.96.2 kuruldu;
-Docker Engine 29.9.2 ve Compose v5.6.1 yanıt veriyor. PostgreSQL 16.10 ve Redis
-7.4.6 healthcheck'leri geçti. Python 3.12.12 / uv 0.9.5 container'ı oluşturuldu;
-71 bağımlılık lock dosyasında sabitlendi.
+## Environment difficulties
 
-`make lint`: ruff, format, strict mypy ve dört import kontratı geçti.
-`make test`: veri koruması için iki unit testi geçti. Pre-commit tüm staged
-kaynaklarda geçti. Git hook container içinden çalışır; host Python bağımlılığı
-oluşturmaz. M0 aşamasında Rust/Node kodu yok; ilgili kalite kontrolleri M3/M8'de
-CI'a eklenecek. Seed, verify ve bench hedeflerinin işlevleri henüz yapılmadı.
-
-ADR-10 revizyonu: import-linter tek kök paket ayarı düzeltildi; framework
-importlarının gerçekten denetlenmesi için harici paket taraması açıldı.
-Public repo oluşturma ve CI kontrolü sıradaki adımdır; M0 henüz CI ile
-kanıtlanmadı. M1–M10 yapılmadı.
-
-Public repo oluşturuldu: https://github.com/levend18/ledgerbridge-loan-adapter.
-İlk CI, container ile runner dosya sahipliği farkından dolayı pre-commit'in
-Git deposunu okuyamaması nedeniyle kırıldı. Yalnızca container içindeki `/app`
-çalışma dizini Git safe.directory olarak tanımlandı; host ayarları değiştirilmedi.
-
-İkinci CI'da pre-commit ve lint geçti; boş integration klasörü Git'te
-izlenmediğinden `make test` temiz klonda bulunamayan dizin hatası verdi.
-Integration ve verification dizinleri `.gitkeep` ile iskelete eklendi.
-Test kapsamı veya assert'ler değiştirilmedi.
-
-M0 tamamlandı: `f931f6b` için CI 39757749673 PASS. Gerçek pre-commit hook'u
-stage edilmiş sentetik `.guard-probe.csv` dosyasını reddetti; probe index'ten
-ve diskten temizlendi. Hiçbir gerçek CSV izlenmiyor. M1 başlatıldı.
-
-## M1 — PostgreSQL izolasyonu ve atomik yayın
-
-Django RunSQL migration'ı ile ref/ops/dwh şemaları, üç tenant, üç fact parent,
-dokuz statik partition, current_snapshot ve security_invoker ortak view kuruldu.
-Reader salt SELECT ve tenant+snapshot RLS ile sınırlı; partition'lara doğrudan
-SELECT yok. Writer BYPASSRLS fakat superuser değil. Django rolü yalnızca public
-şemasına yetkili. Servis parolaları env üzerinden parametreli bootstrap ile gelir.
-
-`make lint` PASS, `make test` 5 PASS. V-05 ve V-15'in SQL kısmı 2 PASS:
-10 adet 1000/2000 yayın değişiminde eşzamanlı okuma, transaction rollback,
-GC idempotency ve diğer tenant'ın korunması kanıtlandı. Ölçülen SQL okuma
-p99 4.391 ms (yerel arm64 Docker; API gecikmesi değildir).
-
-ADR-03/04 revizyonları: kaynak kolon adı loan_status_code korunur; çok sorgulu
-okumalar READ ONLY REPEATABLE READ transaction kullanır. API kapsamındaki
-V-15 henüz yapılmadı. M1 CI kontrolü bekleniyor; M2–M10 yapılmadı.
-
-M1 tamamlandı: `3c52209` için CI 39758465166 PASS. M2 başlatıldı.
-
-## M2 — Domain, port'lar ve use case'ler
-
-Tenant/loan/dataset/severity değerleri, finite Decimal Money/Rate, sınırlı detaylı
-validation raporu, SyncRun geçişleri ve severity politikası eklendi. Her modülün
-port'u kendi domain'inde; orkestrasyon dış bağımlılıklara yalnızca Protocol ile
-bağlanır. Poll değişmeyen sürüme run açmaz; tek bir bankanın ağ hatası diğer
-birimlerin kontrolünü kesmez. Aynı sürümde manuel sync SKIPPED olur; force işler.
-
-`make lint` PASS; `make test` 20 PASS. Fake'lerle hata/uyarı/schema, lock, force,
-rollback, GC, state machine ve Decimal kontrolleri geçti. Domain/application
-unit testleri DB kullanmaz. ADR-10 ortak saf DTO'ları açıklar; ADR-04 terminal
-başarıyı GC sonrasına taşır (V-07 fiziksel satır garantisi). GC sonrası teknik
-hata yayındaki batch'i silmez. Retry ağ sınıfları tipli; Celery bağlaması M5'tedir.
-M2 CI bekleniyor; M3–M10 yapılmadı.
-
-M2 tamamlandı: `a18fc35` için CI 39759264049 PASS. M3 başlatıldı.
-
-## M3 — Rust normalizasyon, doğrulama ve profil motoru
-
-Sabit Rust 1.90.0/PyO3 bağımlılıkları, YAML kolon sözleşmeleri, COPY yazıcısı,
-Decimal normalizasyonu, satır kuralları ve Welford profilleri eklendi. İlk 10.000
-satır birim/biçim tespiti için sınırlı buffer'da; devamı streaming. Kategoriler
-1000 farklı değerde sınırlandırılır, yüksek kardinalite açıkça işaretlenir.
-Issue detayları 1000 ile sınırlı; sayaçlar tüm satırları kapsar.
-Boş CSV dahil header kontrolü, kolon kanıtıyla belirsiz sayı çözümü ve ham→kanonik
-kanıtlar test edildi. V-11 default_probability örneği gerçek sözleşmeyle uyumlu
-olarak commercial'a düzeltildi; gerçek veriler test girdisi yapılmadı.
-
-`make lint` PASS (clippy dahil), Rust 3 test PASS (iki proptest), Python 57 PASS.
-Motor V-11 parametreleri + V-05/V-15 SQL: 17 PASS. Banka/API/uçtan uca V-ID'ler
-henüz tamamlanmadı. M3 CI bekleniyor; M4–M10 yapılmadı.
-
-M3 tamamlandı: `a3f18a8` için CI 39761271388 PASS. M4 başlatıldı.
-
-## M4 — Banka simülasyonu ve seed
-
-FastAPI/SQLite WAL servisi: transaction'lı PUT replace/PATCH upsert, birim sürümü,
-SHA-256/satır sayısı meta, NDJSON chunked stream ve cursor sayfalaması. Tenant
-bank key'den çözülür; ham stringler korunur. Bozuk CSV transaction'ı geri alır.
-PUT duplicate'leri korur (adaptörün V-10 kontrolü için). ADR-07 açıklandı.
-Sentetik üretici, SQLite eşlemeli deterministik seed, güncelleme için v2 parçaları
-ve field/schema/normalize/cross kirletme profilleri eklendi. Seed'in demo kullanıcı
-ve sync adımı M6 bağlamasıyla tamamlanacak; henüz uçtan uca seed değildir.
-
-`make lint` PASS; Rust 3 ve Python 61 PASS; mevcut verification 18 PASS.
-V-20/V-21: ham değerler, version, digest, sayfalama ve tenant kontrolü geçti;
-gerçek HTTP üzerinden chunked indirme ayrıca doğrulandı. Sentetik seed altı birime
-başarıyla yüklendi. M4 CI bekleniyor; M5–M10 yapılmadı.
-
-M4 tamamlandı: `d4708f5` için CI 39762096258 PASS. M5 başlatıldı.
-
-## M5 — Gerçek adaptörler ve Celery
-
-HTTP indirme digest/satır sayısı ve sürüm kontrolü, Rust bağlaması, COPY yükleme,
-SQL duplicate/orphan/plan sayısı doğrulamaları, atomik profil+snapshot yayını,
-GC, kalıcı run/issue kayıtları ve Celery polling/retry eklendi. Reader RLS,
-writer ve Django yetkileri ayrıdır. Run süresi, GC süresi ve peak RSS kaydedilir.
-
-`make lint` PASS; Rust 3 ve Python 70 PASS. Mevcut verification 25 PASS;
-canlı worker/beat testi 1 PASS (otomatik yayın ve değişmeyen sürümde yeni run yok).
-1000→2000 replace, rejected batch'in eski snapshot/profili koruması, duplicate,
-orphan, schema, indirme bütünlüğü ve 40 update + 10 insert PATCH doğrulandı.
-Tekrarlı test bankanın iterator thread değişiminde SQLite hatasını yakaladı;
-istek başına bağlantı yaşam döngüsü ve 64KB stream ile düzeltildi, regresyon testi
-geçti. API/UI/200MB ve temiz klon kapsamı henüz yapılmadı. M5 CI bekleniyor.
-
-M5 ve yerel talimat dosyalarının Git'ten çıkarılması: temizlenmiş geçmişte
-`30b35d1` için CI 39764118393 PASS. Önceki commit SHA'ları geçmiş temizliğiyle
- değişti. M6 başlatıldı.
-
-## M6 — JWT ve REST API
-
-JWT tenant/sub/role claim'leri hesap üyeliğinden üretilir. Veri, run, issue ve
-sync uçları kimlik doğrular; parametre tenant'ı sadece eşleşme kontrolüdür.
-DWH reader transaction'ları READ ONLY REPEATABLE READ; cursor snapshot'a bağlıdır.
-API writer parolası almaz; Django rolüne tenant policy'li run INSERT ve yalnızca
-kuyruk hatasını FAILED yapacak dar UPDATE yetkisi verildi. RFC 9457 hata içerikleri,
-OpenAPI/Swagger ve seed demo kullanıcıları eklendi.
-
-Lint PASS; Python 78 PASS, mevcut verification 31 PASS. V-01 tüm route taraması,
-V-02 JWT, V-03/04/06 tenant/type/pagination, sync 202/409 ve 10 yayın sırasında
-API okuma tutarlılığı geçti. Gerçek HTTP: token/health/schema 200, anonim veri 401.
-`make seed` gerçek kaynakları değiştirmeden işledi: 25.430 retail, 4.440 commercial
-kredi ve 269.442/25.070 plan; altı SEED run SUCCEEDED. Son ortamın temiz klon ve
-izole uçtan uca doğrulaması M10'da ayrıca yapılacak. M6 CI bekleniyor.
-
-M6 tamamlandı: `25acc86` için CI 39765657273 PASS.
-
-## M7 — Profil API ve SQL eşdeğerliği
-
-Profil endpoint'i kimlikten tenant alır; reader RLS ile yalnızca yayındaki iki
-dataset'in profillerini aynı snapshot transaction'ında getirir. Her kolonun null,
-sayısal, tarih ve kategorik sonuçları SQL ile karşılaştırıldı (iki kredi tipi).
-Rejected yükleme sonrası API profili byte düzeyinde aynı kaldı. Yüksek kardinalite
-limiti açık flag/null özet ile test edildi.
-
-ADR-01 revizyonu: motor COPY öncesi money/rate değerlerini DWH hassasiyetine
-getirir; böylece üç ondalıklı para profil/SQL farkı yaratmaz. İlgili motor testinin
-eski 1.234 beklentisi storage sözleşmesine göre 1.23 olarak düzeltildi; ayrıca
-SQL karşılaştırması artık üç ondalıklı girdi kullanır. Integer/numeric overflow
-field ERROR olur. Test gevşetilmedi; gerçek saklama sözleşmesi test kapsamına alındı.
-
-Lint ve Rust testleri PASS; Python 81 PASS, mevcut verification 33 PASS.
-M7 CI bekleniyor. Frontend, benchmark, rapor ve temiz klon doğrulaması yapılmadı.
-
-M7 tamamlandı: `aead756` için CI 39766682120 PASS. M8 başlatıldı.
-
-## M8 — React arayüz ve manuel kabul
-
-Login, banka CSV replace/PATCH yükleme ve progress, kaynak/yayın sürümü,
-manuel sync ve canlı durum, sanal portföy tablosu, ECharts profilleri ve
-severity filtreli doğrulama ekranı tamamlandı. Query anahtarları tenant içerir;
-çıkışta cache temizlenir. Runs API kaynak sürümünü sunucu bank key'iyle okur.
-Frontend bağımlılıkları lock dosyasında sabit; npm audit sıfır açık bildirdi.
-
-Lint PASS; Rust 3, Python 81, Vitest 2 test PASS. Tarayıcıdan geçerli upload →
-SUCCEEDED → data/profiling → hatalı upload → REJECTED akışı ve eski 6 satırın
-korunması görüldü. V-22 manuel kanıtları docs/UI_VERIFICATION.md ve sentetik
-screenshots altındadır; otomatik Playwright SHOULD kapsamı yapılmadı.
-M8 CI bekleniyor. Kullanıcı M9 performans ölçümünü ve M10'u da istedi.
+Docker installation originally failed because the disk was full and the DMG
+mount was busy. User-authorized cleanup freed space; unrelated protected projects
+were not removed. Docker image caches and temporary benchmark files also require
+care on this machine. Only current-task build/test resources are eligible for
+further cleanup. Benchmark temporary files are deleted after runs.

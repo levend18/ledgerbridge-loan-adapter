@@ -12,3 +12,6 @@ bench-output
 .ruff_cache
 .pytest_cache
 .import_linter_cache
+
+AGENTS.md
+verification-report.md

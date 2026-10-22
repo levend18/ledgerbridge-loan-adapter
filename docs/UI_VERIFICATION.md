@@ -1,29 +1,28 @@
-# M8 — Arayüz kabul kaydı
+# M8 — Manual UI Acceptance Record
 
-22 Ekim 2026, yerel Docker/arm64 ortamında uygulama tarayıcı üzerinden kontrol
-edildi. Yalnızca `tools.make_dirty` ile oluşturulan altı satırlık sentetik veriler
-kullanıldı. Bu kayıt V-22'nin manuel MUST kapsamıdır; otomatik Playwright testi
-uygulandı anlamına gelmez.
+On 22 October 2026, LedgerBridge was checked in the browser against the local
+Docker/arm64 stack. Only six-row synthetic scenarios from `tools.make_dirty` were
+used for the captured workflow. This is the manual MUST portion of V-22, not an
+automated Playwright test suite.
 
-- `bank001_user` ile giriş başarılı: [giriş](screenshots/login.jpg).
-- Banka portalından kredi ve plan CSV dosyaları yüklendi; kaynak sürümü ve iki
-  dataset'in altı satırlık sayıları görüldü: [yükleme](screenshots/bank-upload.jpg).
-- Manuel sync SUCCEEDED oldu; yayın sürümü 480, kredi/plan sayıları 6/6 idi:
-  [senkronizasyon ekranı](screenshots/sync.jpg) ilk demo yüklemesini gösterir.
-- Data ekranında altı kredi, `1234.56`, `0.18500000`, ISO tarih ve boolean değerler
-  görüldü: [veri](screenshots/data.jpg).
-- Profil ekranında null oranları, min/max/ortalama/standart sapma ve kategori
-  dağılım grafikleri görüldü: [profil](screenshots/profiles.jpg).
-- Field hatalı CSV yüklendi (kaynak 481); manuel sync REJECTED oldu. Hata
-  ekranında REQUIRED, INVALID_NUMBER, OUT_OF_RANGE, UNKNOWN_CODE ve
-  MATURITY_AFTER_START kuralları, ham değerler ve ERROR filtresi kontrol edildi:
-  [reddetme](screenshots/validation-rejected.jpg).
-- Reddetmeden sonra Data hâlâ sürüm 480 ve altı kredi gösterdi.
-- Bu akış boyunca çalışma alanı BANK001 idi; ekranlarda BANK002 verisi yoktu.
-  API ve RLS izolasyonunun otomatik kanıtları V-03/V-04/V-05 testlerindedir.
-- Tarayıcı konsolunda error kaydı yoktu. Süresi dolan JWT ile API hata gösterdi;
-  çıkış ve yeniden giriş sonrasında akış devam etti.
+- Signed in as `bank001_user`: [login](screenshots/login.jpg).
+- Uploaded compatible credit and payment-plan CSVs through the bank portal.
+  Source version 63 showed six credits and six plans: [upload](screenshots/bank-upload.jpg).
+- Forced a manual sync, which became SUCCEEDED at published version 63 with 6/6
+  rows: [sync](screenshots/sync.jpg).
+- The data view showed six credits and normalized 1234.56 amounts, 0.18500000
+  rates, ISO dates and booleans: [data](screenshots/data.jpg).
+- Profile cards displayed null rates, numeric summaries and categorical charts:
+  [profiles](screenshots/profiles.jpg).
+- Uploaded the field-error scenario as source version 64. Manual synchronization
+  became REJECTED, with 12 ERROR, 2 WARNING and 105 CORRECTED counts. Checked
+  REQUIRED, INVALID_NUMBER, OUT_OF_RANGE, UNKNOWN_CODE, MATURITY_AFTER_START and
+  ORPHAN_PAYMENT details, including raw values and the ERROR filter:
+  [validation](screenshots/validation-rejected.jpg).
+- After rejection, the published snapshot remained version 63 with six credits.
+- The workspace remained BANK001; no BANK002 records appeared. Automated
+  API/RLS isolation evidence is provided separately by V-03/V-04/V-05.
 
-Ekran görüntüleri aşamalar arasında alınmıştır; sayaçlar o aşamadaki sentetik
-veriye aittir. `make test` ve `make verify` demo verisini değiştirir; sonrasında
-`make seed` ile başlangıç portföyü yeniden yüklenebilir.
+Screenshots represent different stages of this synthetic workflow. Acceptance
+and benchmark commands change demo data; `make seed` restores the initial
+portfolio. UI labels remain Turkish; the documentation is English.

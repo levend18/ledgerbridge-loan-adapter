@@ -27,7 +27,7 @@ export function Login({ onLogin }: { onLogin: (session: Session) => void }) {
     <main className="login-page">
       <section className="login-story">
         <div className="brand">
-          t<span>ledgerbridge</span>
+          L<span>LedgerBridge</span>
         </div>
         <span className="eyebrow">VERİNİZE GÜVENLE BAĞLANIN</span>
         <h1>

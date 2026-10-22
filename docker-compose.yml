@@ -1,3 +1,4 @@
+name: ledgerbridge
 services:
   postgres:
     image: postgres:16.10-bookworm

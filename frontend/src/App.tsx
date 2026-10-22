@@ -42,7 +42,7 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          t<span>ledgerbridge</span>
+          L<span>LedgerBridge</span>
         </div>
         <div className="workspace">
           <span className="bank-avatar">{session.tenant.slice(-2)}</span>
@@ -136,7 +136,8 @@ export default function App() {
             <IssuesView key={kind + issueId} {...shared} runId={issueId} />
           )}
           <footer>
-            ledgerbridge · Veri Entegrasyon Adaptörü <span>Yerel demo ortamı</span>
+            LEDGERBRIDGE · Veri Entegrasyon Adaptörü{" "}
+            <span>Yerel demo ortamı</span>
           </footer>
         </main>
       </div>

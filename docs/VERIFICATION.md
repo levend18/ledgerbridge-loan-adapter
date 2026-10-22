@@ -1,185 +1,168 @@
-# Doğrulama Senaryoları
+# Acceptance Scenarios
 
-> Her senaryo bir gereksinimi (R-ID, `docs/tecnic.md` §2) kanıtlar ve **MUST** / **SHOULD** olarak işaretlidir.
-> Hepsi `tests/verification/test_vXX_*.py` altında otomatik testtir; `make verify` hepsini container içinde çalıştırır ve `verification-report.md` üretir.
-> Her senaryoda elle tekrar edilebilmesi için manuel (curl) adımlar da verilmiştir.
+Each scenario maps to a requirement in `tecnic.md` and carries a MUST/SHOULD
+priority. Automated tests live in `tests/verification/`. V-22 MUST uses a manual
+browser record and screenshots; its automated test checks evidence files only.
+`make verify` runs lint, isolated tests, live worker tests and a fresh benchmark,
+then renders JUnit evidence into `verification-report.md`. Missing evidence fails.
 
-## Ön koşul
+## Prerequisites
 
 ```bash
 cp .env.example .env
-make up            # docker compose up -d --wait
-make seed          # ./data altında gerçek CSV'ler varsa onlar, yoksa sentetik veri → 3 bankaya bölünür, bankaya yüklenir
-make verify        # tüm senaryolar + rapor
+make up
+make seed
+make verify
 ```
 
-Manuel kontrol için yardımcılar:
+Demo users: bank001_user, bank002_user, bank003_user; password demo1234 (local
+simulation only). Seed uses read-only local data when present, otherwise synthetic
+data. Acceptance tests use synthetic records and alter the demo environment.
 
-```bash
-API=http://localhost:8000; BANK=http://localhost:8001
-tok() { curl -s -X POST $API/api/auth/token -H 'Content-Type: application/json' \
-        -d "{\"username\":\"$1\",\"password\":\"demo1234\"}" | jq -r .access; }
-T1=$(tok bank001_user); T2=$(tok bank002_user); T3=$(tok bank003_user)
-sync_wait() { # $1=token $2=tenant $3=loan_type → son durum
-  id=$(curl -s -X POST $API/api/sync -H "Authorization: Bearer $1" -H 'Content-Type: application/json' \
-       -d "{\"tenant_id\":\"$2\",\"loan_type\":\"$3\",\"force\":true}" | jq -r .sync_run_id)
-  until s=$(curl -s $API/api/sync/$id -H "Authorization: Bearer $1" | jq -r .status); \
-        [[ $s =~ SUCCEEDED|REJECTED|FAILED|SKIPPED ]]; do sleep 1; done; echo $s; }
-```
+## A. Authentication and isolation
 
-Demo kullanıcıları seed ile oluşur: `bank001_user`, `bank002_user`, `bank003_user` (şifre `demo1234`, yalnızca yerel demo).
+### V-01 · Every non-public endpoint requires a token — MUST
+Call data, sync, profiling, runs and validation-issues without Authorization.
+Expect 401 and application/problem+json. Enumerate the entire URL configuration;
+only health, auth, schema and documentation routes are whitelisted.
 
----
+### V-02 · Invalid credentials are rejected — MUST (JWT) / SHOULD (API key)
+Bad JWT signature and expired JWT return 401. An invalid X-API-Key does not grant
+access. Valid tenant API-key authentication remains SHOULD and is not implemented.
 
-## A. Kimlik doğrulama ve tenant izolasyonu (R2, R9)
+### V-03 · A tenant receives only its own data — MUST
+Publish distinct portfolios for three tenants and paginate all BANK001 records.
+Every row has tenant_id BANK001, IDs do not intersect BANK002/003 source sets,
+and the total equals the expected BANK001 input count.
 
-### V-01 · Token olmadan veri endpoint'i çalışmaz — MUST
-- **Adım:** Authorization olmadan `/api/data`, `/api/sync`, `/api/profiling`, `/api/runs`, `/api/validation-issues`.
-- **Beklenen:** Hepsi `401`, `application/problem+json`.
-- **Ek:** Test URL conf'taki **tüm** route'ları gezer; whitelist (`/api/health`, `/api/auth/*`, `/api/docs`, `/api/schema`) dışında 401 dönmeyen route varsa kırılır. Böylece sonradan eklenen bir endpoint korumasız kalamaz.
+### V-04 · Foreign tenant parameters and run IDs are denied — MUST
+With BANK001 identity, request BANK002 on data, profiling, sync, runs and issues:
+expect 403 tenant-mismatch. Access to a BANK002 run/issue list returns 404 without
+revealing its existence.
 
-### V-02 · Geçersiz token ve API key — MUST (JWT kısmı) / SHOULD (API key kısmı)
-- **Adım:** Bozuk imzalı JWT; süresi dolmuş JWT; geçersiz `X-API-Key`; geçerli BANK001 `X-API-Key`.
-- **Beklenen:** İlk üçü `401`; geçerli API key ile BANK001 verisi `200`.
+### V-05 · RLS enforces tenant and snapshot isolation — MUST
+As app_reader, set transaction-local app.tenant_id to BANK001. Read only BANK001
+current facts; requesting BANK002 returns zero rows. With no tenant setting,
+return zero rows. Direct child-partition SELECT is denied. A newly loaded but
+unpublished batch is invisible. Repeat relevant checks after publication.
 
-### V-03 · BANK001 verisi çekilirken BANK002 verisi gelmez — MUST *(görev senaryosu 1)*
-- **Adım:** 3 tenant için RETAIL sync. `$T1` ile `GET /api/data?tenant_id=BANK001&loan_type=RETAIL` tüm sayfalar.
-- **Beklenen:** Tüm satırlarda `tenant_id == "BANK001"`; loan ID kümesi seed'in BANK002/003 kümeleriyle kesişmez; toplam = seed'in BANK001 sayısı.
+## B. Storage and replacement
 
-### V-04 · Başka tenant'ın verisi istenemez — MUST
-- **Adım:** `$T1` ile `tenant_id=BANK002` → data, profiling, sync (POST), runs, validation-issues; BANK002'ye ait bir `sync_run_id` ile `GET /api/sync/{id}`.
-- **Beklenen:** `403 tenant-mismatch`; run detayı `404`.
+### V-06 · Retail and commercial are independently available — MUST
+Publish both types and query credit/payment_plan separately. Retail has
+insurance_included and no sector_code; commercial has the inverse. Credit ID
+sets do not intersect, and row counts match each source dataset.
 
-### V-05 · Veritabanı seviyesinde izolasyon (RLS) — MUST
-- **Adım (`app_reader` rolüyle SQL):**
-  ```sql
-  BEGIN; SELECT set_config('app.tenant_id','BANK001',true);
-  SELECT DISTINCT tenant_id FROM dwh.fact_loan_retail;                  -- yalnızca BANK001
-  SELECT count(*) FROM dwh.fact_installment WHERE tenant_id='BANK002';  -- 0
-  COMMIT;
-  BEGIN; SELECT count(*) FROM dwh.fact_loan_retail; COMMIT;             -- ayar yok → 0 (fail-closed)
-  SELECT count(*) FROM dwh.fact_loan_retail_bank002;                    -- permission denied
-  ```
-  Ayrıca: `app_writer` ile yayınlanmamış bir batch yüklenir; `app_reader` (doğru tenant ayarıyla) bu satırları **göremez**.
-- **Beklenen:** Yorumlardaki gibi; aynı kontroller bir publish **sonrası** tekrar edilir.
+### V-07 · Replacing 1000 credits with 2000 yields 2000 — MUST
+PUT and sync 1,000 credits/plans, then 2,000. Published count and, after GC,
+physical writer-visible count must equal 2,000. Plans belong only to the new
+batch. Other units remain unchanged.
 
----
+### V-08 · Invalid replacement preserves valid data and profiles — MUST
+Publish valid batch A, then introduce ERRORs such as invalid maturity or orphan
+plans. New run is REJECTED; API data and profiles retain A. Issues include source
+row, rule and raw value. Rejected batch rows are physically removed.
 
-## B. Veri tipleri ve depolama (R3, R6)
+## C. Validation and normalization
 
-### V-06 · RETAIL ve COMMERCIAL ayrı çekilebilir — MUST *(görev senaryosu 2)*
-- **Adım:** BANK001 için RETAIL + COMMERCIAL sync; ayrı `GET /api/data` (credit ve `dataset=payment_plan`).
-- **Beklenen:** RETAIL retail şemasında (`insurance_included` var, `sector_code` yok), COMMERCIAL tersi; loan ID kümeleri kesişmez; satır sayıları kaynakla eşit.
-
-### V-07 · 1000 kredi → 2000 kredi = 2000 — MUST *(görev senaryosu 3)*
-- **Adım:** BANK001/RETAIL için 1000 kredilik (planlarıyla) `PUT` → sync; sonra 2000 kredilik `PUT` → sync.
-- **Beklenen:** API'de önce 1000, sonra **2000**. Run tamamlandıktan (GC dahil) sonra fiziksel tabloda da `count(*) WHERE tenant_id='BANK001'` = 2000 (writer rolüyle). Plan tablosu yalnızca yeni planları içerir. Diğer birimlerin sayıları değişmez.
-
-### V-08 · Geçerli → geçersiz: eski veri korunur — MUST *(görev senaryosu 4)*
-- **Adım:** Geçerli veri sync (`batch_id=A`). Sonra ERROR içeren veri (ör. %1 satırda `final_maturity_date < loan_start_date` veya orphan payment) → sync.
-- **Beklenen:** İkinci run `REJECTED`; `/api/data` hâlâ `batch_id=A` ve aynı sayı; `/api/profiling` A'nın profili; `GET /api/validation-issues?sync_run_id=<B>` satır, kural, raw değer gösterir; reddedilen batch'in satırları fiziksel tablodan silinmiş.
-
----
-
-## C. Validation ve normalization (R4, R5)
-
-### V-09 · Field-level validation — MUST
-- **Adım:** `tools/make_dirty.py --profile field`: zorunlu alan boş, tip bozuk (`abc` tutar), negatif tutar, aralık dışı oran, bilinmeyen kategori, yanlış kolon adı.
-- **Beklenen:** Her biri beklenen `rule_id` ile issue üretir ve batch REJECTED olur; şema hatası dosyayı tamamen reddeder (`SchemaMismatch`).
+### V-09 · Field and schema validation — MUST
+Use the dirty generator's field/schema cases: required blank, invalid amount abc,
+negative amount, out-of-range rate, unknown category and wrong column name.
+Expect the appropriate rule IDs and rejection. SchemaMismatch rejects the file,
+including invalid headers on empty files.
 
 ### V-10 · Cross-file validation — MUST
-- **Adım:** (a) planda kredisi olmayan `LOAN_999999`; (b) duplicate `loan_account_number`; (c) duplicate `(loan, installment_number)`.
-- **Beklenen:** (a) `ORPHAN_PAYMENT`, (b)/(c) `DUPLICATE_KEY` → REJECTED, satır numaralarıyla raporlanır; planı olmayan kredi ve plan sayısı uyumsuzluğu → WARNING, yayınlanır.
+Orphan LOAN_999999 produces ORPHAN_PAYMENT; duplicate loan key or duplicate
+(loan, installment_number) produces DUPLICATE_KEY. Rejection includes source-row
+evidence. Missing plans and plan-count mismatch warn but do not block publication.
 
-### V-11 · Normalization — MUST
-- **Adım:** `make_dirty.py --profile normalize`:
-  - Tarih: `20240115`, `15.01.2024`, `2024-01-15`, `15/01/2024`, `2024-01-15T00:00:00`
-  - Oran: `18.5%`, `1850 bps`, percent kolonunda `18.5`, fraction kolonunda `0.185`
-  - Kategori: `K`, `Kapalı`, `KAPALI `, `kapali`, `Paid`, `Closed`; `E`, `Evet`, `yes`
-  - Sayı: `1.234,56`, `1,234.56`, `1234.56`
-- **Beklenen:** DWH'de `2024-01-15`, `0.185`, `CLOSED`, `true`, `1234.56`. Kirli değerler için issue'da `raw_value → normalized_value`. Run detayında `unit_decisions`: gerçek veride retail `nominal_interest_rate = percent`, commercial `default_probability = fraction`.
-- **Ek (gerçek veriyle):** retail'deki 127 adet `100.00` faiz `RATE_IMPLAUSIBLE` WARNING üretir; veri yayınlanır.
+### V-11 · Normalization preserves canonical values and evidence — MUST
+Accept dates 20240115, 15.01.2024, 2024-01-15, 15/01/2024 and ISO datetime.
+Accept 18.5%, 1850 bps, percent-column 18.5 and fraction-column 0.185.
+K/Kapalı/KAPALI/kapali/Paid/Closed normalize to CLOSED; E/Evet/yes to true.
+1.234,56 / 1,234.56 / 1234.56 normalize to decimal 1234.56. Persist raw→canonical
+issue evidence and column-level unit decisions. Commercial default_probability
+is fractional; retail nominal_interest_rate is percent.
+The optional real-data case expects 127 RATE_IMPLAUSIBLE warnings for retail
+100.00 rates without rejecting the portfolio. Synthetic tests do not claim this
+private-data observation as fresh evidence.
 
----
+## D. Synchronization
 
-## D. Senkronizasyon (R12)
+### V-12 · A new source version triggers automatic sync — MUST
+With five-second polling, PUT a new bank version without manual sync. Expect a
+POLL run to succeed within two poll intervals plus processing time, with the new
+version visible to the tenant.
 
-### V-12 · Yeni veri gelince otomatik sync — MUST
-- **Adım:** `POLL_INTERVAL_SECONDS=5`; bankaya BANK002/COMMERCIAL için yeni versiyon `PUT`; manuel sync yok.
-- **Beklenen:** En geç `2 × poll + işleme süresi` içinde `trigger=POLL` run `SUCCEEDED`; `/api/data` yeni versiyonu gösterir.
+### V-13 · Unchanged sources do not trigger duplicate work — MUST
+Observe several unchanged polling cycles: no new run. Manual force=false returns
+SKIPPED and preserves batch identity. Force=true may republish.
 
-### V-13 · Değişiklik yoksa iş yapılmaz — MUST
-- **Adım:** Banka versiyonu değişmeden birkaç poll döngüsü; ardından `force=false` manuel sync.
-- **Beklenen:** Poll yeni run oluşturmaz; manuel run `SKIPPED`; `batch_id` aynı.
+### V-14 · PATCH changes are automatically synchronized — MUST
+PATCH 40 existing credits with changed balances and add ten new credits. Missing
+plans are warnings, not publication errors.
+Polling publishes the new version. Total increases by ten; all 40 existing
+balances match the update. Test direct PATCH semantics and the live poll path.
 
-### V-14 · Kısmi güncelleme (PATCH) senkronize olur — MUST
-- **Adım:** BANK003/RETAIL'e 50 kredilik `PATCH` (10 yeni, 40 güncellenmiş tutar) → poll.
-- **Beklenen:** Toplam = eski + 10; 40 kredinin `outstanding_principal_balance` yeni değerde.
+## E. Atomicity and resilience
 
----
+### V-15 · Readers never see a partial or mixed publication — MUST
+Read continuously while publishing 1,000 ↔ 2,000 rows ten times. SQL paired reads
+and API reads see one complete batch, valid counts and consistent credit/plan
+snapshot metadata. No read errors or lock stalls. Record read p99 latency.
 
-## E. Atomiklik ve dayanıklılık (R6)
+### V-16 · Concurrent sync and worker recovery — SHOULD
+Concurrent POST should return 409 for the second active request. Killing a worker
+must preserve the published batch; a reaper should fail abandoned runs and a
+later sync should succeed. 409 is implemented; the reaper portion is not complete.
 
-### V-15 · Yayın sırasında okuyucu yarım/karma veri görmez — MUST
-- **Adım:** Bir thread sürekli okur (API + `app_reader` SQL: `count(*)`, `count(DISTINCT batch_id)` hem credit hem plan); paralelde 1000 ↔ 2000 arasında 10 sync.
-- **Beklenen:** Her okumada count ∈ {1000, 2000}, tek `batch_id`, credit ve plan `batch_id`'leri eşit; hiçbir okuma hata almaz veya bloklanmaz (okuma gecikmesi p99 ölçülür ve raporlanır).
+## F. Scale and profiling
 
-### V-16 · Çakışan sync ve çöken worker — SHOULD
-- **Adım:** (a) Aynı birime aynı anda iki `POST /api/sync`. (b) `PROCESSING` sırasında `docker compose kill worker`, sonra worker'ı yeniden başlat.
-- **Beklenen:** (a) ikinci istek `409`; tek publish. (b) Yayındaki veri aynı; reaper run'ı `FAILED` yapar; yarım batch sonraki run'ın GC'siyle silinir; sonraki sync başarılı.
+### V-17 · 200 MB processing uses bounded memory — MUST
+Generate approximately 50 MB and 200 MB payment-plan CSVs with compatible credits,
+upload and sync through actual Celery workers. Both runs must SUCCEED and physical
+row counts must match generation. Fresh child peak RSS ≤256 MiB; absolute relative
+RSS difference between sizes <20%. Capture ops.sync_run metrics and independent
+docker stats. Report duration and GC cost in README and verification-report.md.
 
----
+### V-18 · Profiles agree with stored SQL values — MUST
+Compare every column's null ratio and numeric min/max/avg/stddev_samp or exact
+categorical distinct/mode to PostgreSQL results for both credit types and plans.
+Numeric relative error <1e-9; other values exact. A fully empty closing-date column
+has null_ratio 1.0. Rejected batches must not alter the published profile.
 
-## F. Ölçek ve profiling (R7, R10)
+### V-19 · Fault-injection manifest matches results — SHOULD
+A reproducible mixed dirty-data generator should create expected.json, with
+severity/rule counters and decisions matching actual results. Not completed.
 
-### V-17 · 200MB dosya, sabit bellek — MUST
-- **Adım:** `make bench`: ~50MB ve ~200MB payment plan (+ uyumlu kredi) üret, bankaya yükle, sync; worker peak RSS'i `ops.sync_run.peak_rss_kb` + `docker stats`'tan.
-- **Beklenen:** `SUCCEEDED`; satır sayısı doğru; peak RSS ≤ 256MB; 50MB/200MB farkı < %20; süreler ve GC süresi `verification-report.md` + README'ye.
+## G. Bank, frontend and documentation
 
-### V-18 · Profiling doğru — MUST
-- **Adım:** `GET /api/profiling?tenant_id=BANK001&loan_type=RETAIL`.
-- **Beklenen:** Her kolonda `null_ratio`; sayısallarda `min/max/mean/stddev`; kategoriklerde `distinct_count/most_frequent`. SQL ile (`min, max, avg, stddev_samp, count(DISTINCT), mode() WITHIN GROUP`) karşılaştırma: sayısallarda göreli fark < 1e-9, diğerleri birebir. `loan_closing_date.null_ratio = 1.0`.
+### V-20 · Bank API contract — MUST
+Test PUT, PATCH, metadata, chunked NDJSON and paginated JSON. Each successful write
+increments unit version; digest/count agree with downloaded bytes. A valid key
+used with a different tenant path returns 403.
 
-### V-19 · Fault-injection manifesti — SHOULD
-- **Adım:** `make_dirty.py --profile mixed --seed 42` → sync.
-- **Beklenen:** Severity ve `rule_id` bazındaki issue sayıları `expected.json` ile birebir; karar manifestteki ile aynı.
+### V-21 · Bank storage preserves raw strings — MUST
+Upload strings such as 15.01.2024, 18.5% and Kapalı; records must return those
+values unchanged. Normalization belongs to the adapter, not the bank.
 
----
+### V-22 · Frontend acceptance — MUST (manual evidence) / SHOULD (Playwright)
+Login as bank001_user → upload CSVs → manual sync SUCCEEDED → Data table →
+Profiling charts → invalid CSV and sync → REJECTED banner and issue table.
+BANK001 must not see BANK002 data. Save synthetic screenshots under docs/screenshots
+and observations in UI_VERIFICATION.md. Automated Playwright remains optional.
 
-## G. Banka simülasyonu, frontend, dokümantasyon (R1, R8, R13)
+### V-23 · Documentation and architecture contracts — MUST
+Run lint (ruff, mypy, import-linter, Rust fmt/clippy, ESLint/Prettier). Extract
+README curl examples and execute them through real HTTP in test_v23_readme.py.
+README must include setup, accounts, tenant rationale, commands, API examples,
+screenshots, measured performance and open questions. Architecture.md and
+CODE_TOUR.md must exist; architect.md records engineering challenges.
 
-### V-20 · Bank API kontratı — MUST
-- **Adım:** `PUT`, `PATCH`, `GET meta`, `GET records` (NDJSON), `GET records?format=json&limit=`; yanlış `X-Bank-Key` ile başka tenant path'i.
-- **Beklenen:** Her yazma `version`'ı 1 artırır; `meta.sha256/row_count` indirilenle tutarlı; NDJSON `application/x-ndjson`, chunked; başka tenant → `403`.
+## Report contract
 
-### V-21 · Banka ham veriyi korur — MUST
-- **Adım:** `15.01.2024`, `18.5%`, `Kapalı` içeren CSV yükle, `records`'tan geri oku.
-- **Beklenen:** Değerler byte-byte aynı.
-
-### V-22 · Frontend — MUST (manuel liste + ekran görüntüleri) / SHOULD (Playwright)
-- **Adım:** Login (bank001_user) → Bank Portal'dan CSV yükle → "Sync now" → SUCCEEDED → Data tablosu → Profiling grafikleri → geçersiz CSV + sync → Validation ekranında REJECTED banner + issue tablosu.
-- **Beklenen:** Tüm adımlar çalışır; BANK001 kullanıcısı hiçbir yerde BANK002 görmez; ekran görüntüleri `docs/screenshots/`.
-
-### V-23 · Dokümantasyon ve mimari kontratlar — MUST
-- **Adım:** `make lint` (ruff, mypy, `cargo clippy -D warnings`, eslint) + `lint-imports`; README'deki curl örnekleri `tests/verification/test_v23_readme.py` tarafından README'den çıkarılıp çalıştırılır.
-- **Beklenen:** Hepsi yeşil; README'de kurulum, multi-tenant kararı, testler, API örnekleri, performans tablosu, varsayımlar/açık sorular; `Architecture.md` ve `docs/CODE_TOUR.md` mevcut.
-
----
-
-## Rapor formatı (`verification-report.md`)
-
-```
-| V-ID | Seviye | Başlık | Durum | Süre | Kanıt |
-|------|--------|--------|-------|------|-------|
-| V-03 | MUST | BANK001 çekerken BANK002 gelmez | PASS | 4.2s | 8457 satır, kesişim=0 |
-| V-17 | MUST | 200MB bellek | PASS | 92s | peak RSS 141MB (50MB: 133MB) |
-Ortam: git SHA, tarih, makine, Postgres/Python/Rust sürümleri
-```
-
-## Hızlı kontrol
-
-```bash
-git clone <repo> && cd ledgerbridge-loan-adapter
-cp .env.example .env && make up && make seed && make verify
-open http://localhost:5173      # bank001_user / demo1234
-```
+Each V-ID has priority, title, result, duration and evidence. Include git SHA,
+timestamp, environment versions, benchmark metrics and V-15 read latency.
+Every MUST must PASS; unimplemented SHOULD portions are explicitly identified.
+Do not substitute static example numbers for measurements. Run the quick-start
+sequence in a genuinely clean checkout before declaring delivery complete.

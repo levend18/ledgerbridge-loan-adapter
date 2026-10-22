@@ -18,15 +18,14 @@ migrate:
 	docker compose run --rm dev sh -c 'python -m tools.bootstrap_db && python manage.py migrate --noinput'
 hooks:
 	git config core.hooksPath .githooks
-verify:
-	docker compose stop beat worker
-	docker compose run --rm dev pytest tests/verification -q -m "not live_worker"
+verify: migrate
+	sh tools/verify.sh
 seed: migrate
 	docker compose stop beat worker
 	docker compose run --rm dev python -m tools.seed
 	docker compose up -d worker beat
 bench:
-	docker compose run --rm dev python tools/bench.py
+	sh tools/bench.sh
 
 test-live:
 	docker compose up -d worker
