@@ -69,8 +69,18 @@ The current demo UI uses Turkish labels; repository documentation is English.
 
 ## Tenant isolation
 
-Shared schemas, static tenant partitions and RLS keep operations manageable for
-three banks while enforcing database-level isolation. Tenant identity comes from
+**Method:** one shared schema, tables partitioned statically by `tenant_id`, and
+PostgreSQL row-level security (RLS) on every reader-facing table.
+
+**Why:** database-per-tenant gives the strongest operational separation but
+multiplies provisioning, connections and backups; schema-per-tenant multiplies
+every migration. For three banks, shared tables with tenant partitions keep one
+migration path and one connection pool, while RLS makes isolation fail closed in
+the database itself, so an application bug that forgets a tenant filter returns
+no foreign rows. Partitions also keep each tenant's atomic replacement and
+statistics local. The full trade-off is ADR-03 in [docs/tecnic.md](docs/tecnic.md).
+
+Tenant identity comes from
 JWT membership; a request parameter is only an equality check. API reads use
 app_reader with transaction-local set_config and READ ONLY REPEATABLE READ.
 Reader has no direct child-partition access. The worker's non-superuser BYPASSRLS
