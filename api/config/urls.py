@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/sync/<uuid:run_id>", views.RunDetail.as_view()),
     path("api/runs", views.Runs.as_view()),
     path("api/data", views.Data.as_view()),
+    path("api/profiling", views.Profiling.as_view()),
     path("api/validation-issues", views.Issues.as_view()),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema")),

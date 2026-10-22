@@ -128,7 +128,7 @@ def test_v04_tenant_mismatch_and_hidden_runs(client):
     upload([credit(2001)], [payment(2001, 1)], target)
     run = run_sync(target)
     login(client)
-    for path in ("/api/data", "/api/runs", "/api/validation-issues"):
+    for path in ("/api/data", "/api/runs", "/api/validation-issues", "/api/profiling"):
         response = client.get(path, {"tenant_id": "BANK002", "sync_run_id": run.id})
         assert response.status_code == 403
         assert "tenant-mismatch" in response.data["type"]

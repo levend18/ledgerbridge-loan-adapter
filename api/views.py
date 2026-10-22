@@ -207,3 +207,18 @@ class Issues(APIView):
             severity = Severity(severity)
         cursor = int(request.query_params.get("cursor", 0))
         return Response(queries().issues(tenant, run_id, severity, cursor, page_limit(request)))
+
+
+class Profiling(APIView):
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        from adapter.profiling.infrastructure.queries import ProfileQueries
+
+        return Response(
+            ProfileQueries(
+                os.environ.get(
+                    "DATABASE_URL_READER",
+                    "postgresql://app_reader:local-demo-role-password@postgres/adapter",
+                )
+            ).current(unit(request))
+        )

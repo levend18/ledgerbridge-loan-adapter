@@ -214,3 +214,22 @@ API okuma tutarlılığı geçti. Gerçek HTTP: token/health/schema 200, anonim 
 `make seed` gerçek kaynakları değiştirmeden işledi: 25.430 retail, 4.440 commercial
 kredi ve 269.442/25.070 plan; altı SEED run SUCCEEDED. Son ortamın temiz klon ve
 izole uçtan uca doğrulaması M10'da ayrıca yapılacak. M6 CI bekleniyor.
+
+M6 tamamlandı: `25acc86` için CI 39765657273 PASS.
+
+## M7 — Profil API ve SQL eşdeğerliği
+
+Profil endpoint'i kimlikten tenant alır; reader RLS ile yalnızca yayındaki iki
+dataset'in profillerini aynı snapshot transaction'ında getirir. Her kolonun null,
+sayısal, tarih ve kategorik sonuçları SQL ile karşılaştırıldı (iki kredi tipi).
+Rejected yükleme sonrası API profili byte düzeyinde aynı kaldı. Yüksek kardinalite
+limiti açık flag/null özet ile test edildi.
+
+ADR-01 revizyonu: motor COPY öncesi money/rate değerlerini DWH hassasiyetine
+getirir; böylece üç ondalıklı para profil/SQL farkı yaratmaz. İlgili motor testinin
+eski 1.234 beklentisi storage sözleşmesine göre 1.23 olarak düzeltildi; ayrıca
+SQL karşılaştırması artık üç ondalıklı girdi kullanır. Integer/numeric overflow
+field ERROR olur. Test gevşetilmedi; gerçek saklama sözleşmesi test kapsamına alındı.
+
+Lint ve Rust testleri PASS; Python 81 PASS, mevcut verification 33 PASS.
+M7 CI bekleniyor. Frontend, benchmark, rapor ve temiz klon doğrulaması yapılmadı.

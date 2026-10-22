@@ -166,5 +166,14 @@ def test_ambiguous_money_uses_column_evidence(tmp_path):
     assert rows[1]["original_loan_amount"] == "1234"
     assert "WARNING:AMBIGUOUS_NUMBER" not in report["counts"]
     report, rows = process(tmp_path, [credit_row(original_loan_amount="1,234")])
-    assert rows[0]["original_loan_amount"] == "1.234"
+    assert rows[0]["original_loan_amount"] == "1.23"
     assert report["counts"]["WARNING:AMBIGUOUS_NUMBER"] == 1
+
+
+def test_high_cardinality_profile_marks_its_bounded_summary(tmp_path):
+    report, _ = process(tmp_path, [credit_row(customer_id=f"CUST_{i}") for i in range(1001)])
+    profile = report["profiles"]["customer_id"]
+    assert profile["count"] == 1001
+    assert profile["high_cardinality"] is True
+    assert profile["distinct_count"] is None
+    assert profile["top"] == []

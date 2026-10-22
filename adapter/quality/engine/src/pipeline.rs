@@ -2,7 +2,7 @@ use crate::domain::{code_key, detect_unit, normalize_date, normalize_number, nor
 use crate::profile::Stats;
 use crate::schema::{Mappings, Schema};
 use regex::Regex;
-use rust_decimal::Decimal;
+use rust_decimal::{Decimal, RoundingStrategy};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs::File;
@@ -264,13 +264,21 @@ pub fn process(
                             }
                         }
                     }
-                    normalize_number(&numeric).map(|v| v.normalize().to_string())
+                    normalize_number(&numeric).map(|v| {
+                        v.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)
+                            .normalize()
+                            .to_string()
+                    })
                 }
                 "int" => value
                     .parse::<i64>()
                     .map(|v| v.to_string())
                     .map_err(|_| "INVALID_INTEGER".into()),
-                "rate" => normalize_rate(value, &units[name]).map(|v| v.normalize().to_string()),
+                "rate" => normalize_rate(value, &units[name]).map(|v| {
+                    v.round_dp_with_strategy(8, RoundingStrategy::MidpointAwayFromZero)
+                        .normalize()
+                        .to_string()
+                }),
                 "code" => dictionary
                     .get(&(column.domain.clone().unwrap_or_default(), code_key(value)))
                     .cloned()
@@ -317,7 +325,13 @@ pub fn process(
                     Decimal::from_str(&converted).map_err(|e| EngineError::Input(e.to_string()))?;
                 let low = column.min.as_ref().and_then(|v| Decimal::from_str(v).ok());
                 let high = column.max.as_ref().and_then(|v| Decimal::from_str(v).ok());
-                if low.is_some_and(|v| n < v) || high.is_some_and(|v| n > v) {
+                if low.is_some_and(|v| n < v)
+                    || high.is_some_and(|v| n > v)
+                    || (column.kind == "int"
+                        && (n > Decimal::from(i32::MAX) || n < Decimal::from(i32::MIN)))
+                    || (column.kind == "money"
+                        && n.abs() >= Decimal::from(10_000_000_000_000_000i64))
+                {
                     invalid = true;
                     issue!(
                         issues,

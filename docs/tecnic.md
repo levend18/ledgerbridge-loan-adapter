@@ -934,3 +934,13 @@ ayrıca verilen tenant policy'li ops INSERT yetkisiyle yapılır; writer şifres
 servisine verilmez. Cursor snapshot UUID'si ve son iş anahtarını taşır; snapshot
 sayfalar arasında değişirse 400 ile baştan okuma istenir. Plan cursor'ı kredi ve
 taksit numarası ikilisidir. Decimal değerler JSON'da string olarak döner.
+
+### ADR-01 revizyonu (M7) — Profil ve saklanan hassasiyet
+
+Profil PostgreSQL'de gerçekten saklanacak değer üzerinden hesaplanır. Money
+NUMERIC(18,2), oran/probability sekiz ondalık haneye Rust Decimal ile yuvarlanır
+(midpoint away from zero); değişiklik CORRECTED kaydında görünür. Böylece üç
+ondalıklı girdide profil ile COPY sonrası SQL arasında fark oluşmaz. PostgreSQL
+INTEGER ve NUMERIC sınırını aşan değer field ERROR olur; COPY teknik hatasına
+bırakılmaz. Önceki motor testindeki 1,234 → 1.234 beklentisi sayı parser'ı için
+geçerlidir, money COPY çıktısı için 1.23 olmalıdır; test bu sözleşmeye düzeltildi.
