@@ -127,3 +127,39 @@ mount was busy. User-authorized cleanup freed space; unrelated protected project
 were not removed. Docker image caches and temporary benchmark files also require
 care on this machine. Only current-task build/test resources are eligible for
 further cleanup. Benchmark temporary files are deleted after runs.
+
+## Post-delivery attribution and portal hardening
+
+At the owner's request, Levent Çelik / `https://github.com/levend18` is recorded in
+Python/Rust/npm manifests, HTML author metadata, OCI image labels, both OpenAPI
+contact blocks and source entry-point headers. The repository-local commit author
+name is also Levent Çelik. No visible footer/signature, credentials, external
+callbacks or account permissions were added. Container labels, live schema
+responses and the browser DOM were checked directly. Dependency locks remain
+valid; metadata does not add dependencies.
+
+Review identified and corrected three usability failures:
+
+- Non-JSON HTTP errors now retain their status and show an actionable fallback;
+  malformed success bodies also fail clearly instead of exposing a parser error.
+- A stale snapshot cursor can restart from page one, discarding prior pages for
+  that exact tenant/type/dataset query without clearing other tenants' caches.
+  Switching cached datasets resets the actual scrolling element as well as the
+  virtual row offset.
+- DRF list/dictionary validation errors are flattened into readable problem text,
+  retaining field names instead of exposing Python `ErrorDetail(...)` strings.
+
+Regression coverage includes seven HTTP response tests, two data-view tests,
+three structured API error cases and a real API stale-cursor scenario. The full
+regression suite passed 87 Python, 3 Rust and 11 frontend tests. The existing 49
+isolated acceptance tests and three live polling/README checks also passed.
+
+The final full `make verify` run passed all 21/21 MUST IDs. Fresh local benchmarks
+completed 50 MB in 12.061 s and 200 MB in 54.005 s; process peak RSS was 108.48 MiB
+and 107.70 MiB respectively (0.72% difference). These measurements are environment
+specific and the raw evidence remains in ignored local artifacts.
+
+Manual browser regression used 150 synthetic BANK002/RETAIL rows: a publication
+between page requests produced the readable stale-snapshot error; restarting
+loaded the first 100 rows, then the remaining 50 with no error. The final next-page
+button was disabled correctly. Screenshots are retained under ignored artifacts.

@@ -61,7 +61,9 @@ manual sync is also available. Source and published versions are shown separatel
 
 ERROR rejects the batch; WARNING and CORRECTED allow publication and remain
 visible in the validation view. Credit and plan share one snapshot. Pagination
-cursors are snapshot-bound: restart from the first page after a stale-cursor error.
+cursors are snapshot-bound: use the restart button after a stale-cursor error
+to load the new snapshot from its first page. Cached pages are discarded only for
+the selected tenant, portfolio and dataset.
 Access JWTs expire after 15 minutes; sign out and sign in again when expired.
 The current demo UI uses Turkish labels; repository documentation is English.
 
