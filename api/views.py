@@ -22,6 +22,14 @@ from api.storage.models import Membership
 from workers.celery_app import app
 
 
+def problem_text(detail):
+    if isinstance(detail, dict):
+        return "; ".join(f"{key}: {problem_text(value)}" for key, value in detail.items())
+    if isinstance(detail, (list, tuple)):
+        return "; ".join(problem_text(value) for value in detail)
+    return str(detail)
+
+
 def problem_handler(exc, context):
     if isinstance(exc, (ValueError, TypeError)):
         exc = ValidationError(str(exc))
@@ -38,9 +46,9 @@ def problem_handler(exc, context):
         )
         response.data = {
             "type": f"urn:ledgerbridge:{getattr(detail, 'code', 'request-error')}",
-            "title": str(detail),
+            "title": problem_text(detail),
             "status": response.status_code,
-            "detail": str(detail),
+            "detail": problem_text(detail),
         }
         response.content_type = "application/problem+json"
     return response

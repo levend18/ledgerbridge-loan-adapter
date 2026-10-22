@@ -223,3 +223,37 @@ def test_v15_api_reads_remain_consistent_during_ten_publications(client, record_
     assert not errors
     assert len(observations) >= 10
     record_property("api_read_p99_ms", sorted(timings)[int(len(timings) * 0.99)] * 1000)
+
+
+@pytest.mark.parametrize(
+    ("detail", "expected"),
+    [
+        ("Snapshot changed; restart pagination", "Snapshot changed; restart pagination"),
+        (["First issue", "Second issue"], "First issue; Second issue"),
+        ({"loan_type": ["Invalid choice"]}, "loan_type: Invalid choice"),
+    ],
+)
+def test_problem_details_are_readable_without_python_representations(client, detail, expected):
+    from api.views import problem_handler
+    from rest_framework.exceptions import ValidationError
+
+    response = problem_handler(ValidationError(detail), {})
+    assert response.status_code == 400
+    assert response.content_type == "application/problem+json"
+    assert response.data["detail"] == expected
+    assert response.data["title"] == expected
+
+
+def test_stale_cursor_returns_a_readable_problem(client):
+    login(client)
+    upload([credit(i, installments=1) for i in (1, 2)], [payment(i, 1) for i in (1, 2)])
+    assert run_sync(force=True).status == "SUCCEEDED"
+    page = client.get("/api/data", {"limit": 1})
+    assert page.status_code == 200
+    cursor = page.data["next_cursor"]
+    assert cursor
+    assert run_sync(force=True).status == "SUCCEEDED"
+    stale = client.get("/api/data", {"limit": 1, "cursor": cursor})
+    assert stale.status_code == 400
+    assert stale["Content-Type"] == "application/problem+json"
+    assert stale.data["detail"] == "Snapshot changed; restart pagination"

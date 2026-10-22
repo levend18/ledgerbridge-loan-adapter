@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   flexRender,
   getCoreRowModel,
@@ -10,8 +10,10 @@ import type { Dataset, Kind, Page, Row, Session } from "../../types";
 export function DataView({ session, kind }: { session: Session; kind: Kind }) {
   const [dataset, setDataset] = useState<Dataset>("credit");
   const [scroll, setScroll] = useState(0);
+  const cache = useQueryClient();
+  const queryKey = ["data", session.tenant, kind, dataset];
   const query = useInfiniteQuery({
-    queryKey: ["data", session.tenant, kind, dataset],
+    queryKey,
     initialPageParam: "",
     queryFn: ({ pageParam }) =>
       request<Page>(
@@ -77,9 +79,17 @@ export function DataView({ session, kind }: { session: Session; kind: Kind }) {
       {query.isPending ? (
         <p>Veriler yükleniyor…</p>
       ) : query.error ? (
-        <p role="alert" className="notice">
-          {query.error.message}
-        </p>
+        <div role="alert" className="notice">
+          <p>{query.error.message}</p>
+          <button
+            onClick={() => {
+              setScroll(0);
+              void cache.resetQueries({ queryKey, exact: true });
+            }}
+          >
+            İlk sayfadan yeniden yükle
+          </button>
+        </div>
       ) : (
         <>
           <div className="table-meta">
@@ -97,6 +107,7 @@ export function DataView({ session, kind }: { session: Session; kind: Kind }) {
             </span>
           </div>
           <div
+            key={dataset}
             className="data-viewport"
             onScroll={(e) => setScroll(e.currentTarget.scrollTop)}
           >

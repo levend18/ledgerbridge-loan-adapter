@@ -416,7 +416,9 @@ keys include tenant; logout clears cached data. V-22 MUST is manual browser
 acceptance with synthetic screenshots; automated Playwright is SHOULD.
 
 **Post-delivery revision:** HTTP failures without a JSON body retain their HTTP
-status and display a readable fallback. Invalid success bodies are reported as
+status and display a readable fallback. Nested DRF validation details are
+flattened into readable messages without Python object representations. Invalid
+success bodies are reported as
 invalid server responses. After a snapshot-bound cursor fails, the data screen
 can discard its cached pages and restart from the first page; switching datasets
 also resets the actual scroll viewport, preventing blank virtual rows.
